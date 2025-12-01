@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Guardian - Hafta 2</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- ================================================================== -->
+    <!-- ANA KONTEYNER -->
+    <!-- Hafta 2 - Temel arayüz yapısı -->
+    <!-- ================================================================== -->
+    
+    <div class="container">
+        <!-- Başlık -->
+        <header class="header">
+            <h1>🔒 File Guardian</h1>
+            <p class="subtitle">Dosya Şifreleme ve Koruma Sistemi</p>
+            <span class="version">Hafta 2 Prototipi</span>
+        </header>
+
+        <!-- Ana İçerik -->
+        <main class="main-content">
+            <!-- Sol Panel - Dosya İşlemleri -->
+            <section class="panel">
+                <h2>📁 Dosya İşlemleri</h2>
+                
+                <div class="input-group">
+                    <label for="filepath">Dosya Yolu:</label>
+                    <input type="text" id="filepath" placeholder="C:\klasor\dosya.txt">
+                    <button class="btn btn-primary" id="addBtn">➕ Ekle</button>
+                </div>
+                
+                <div class="file-list" id="fileList">
+                    <p class="placeholder">Henüz dosya eklenmedi.</p>
+                    <p class="placeholder">Bu özellik Hafta 3'te eklenecek.</p>
+                </div>
+                
+                <div class="actions">
+                    <button class="btn btn-success" disabled>☁️ Buluta Yükle</button>
+                    <button class="btn btn-warning" disabled>🛡️ Korumayı Başlat</button>
+                </div>
+            </section>
+
+            <!-- Sağ Panel - Durum -->
+            <section class="panel">
+                <h2>📊 Sistem Durumu</h2>
+                
+                <div class="status-card">
+                    <div class="status-item">
+                        <span class="label">Sunucu:</span>
+                        <span class="value" id="serverStatus">Kontrol ediliyor...</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label">Firebase:</span>
+                        <span class="value" id="firebaseStatus">Kontrol ediliyor...</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label">Şifreleme:</span>
+                        <span class="value" id="encryptionStatus">Kontrol ediliyor...</span>
+                    </div>
+                </div>
+                
+                <div class="log-panel">
+                    <h3>📋 Sistem Günlüğü</h3>
+                    <div class="log-content" id="logContent">
+                        <p class="log-entry">[Hafta 2] Temel arayüz hazır.</p>
+                        <p class="log-entry">[Hafta 3] Log sistemi eklenecek.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>File Guardian © 2024 - Scripting Languages Dersi Projesi</p>
+        </footer>
+    </div>
+
+    <!-- JavaScript - Hafta 2 Temel Fonksiyonlar -->
+    <script>
+        // =====================================================================
+        // HAFTA 2 - TEMEL JAVASCRIPT
+        // Sadece durum kontrolü yapılıyor
+        // =====================================================================
+        
+        // Sayfa yüklendiğinde durum kontrolü yap
+        document.addEventListener('DOMContentLoaded', function() {
+            checkStatus();
+        });
+        
+        // Sunucu durumunu kontrol et
+        async function checkStatus() {
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+                
+                // Sunucu durumu
+                document.getElementById('serverStatus').textContent = '✅ Çalışıyor';
+                document.getElementById('serverStatus').style.color = '#4ade80';
+                
+                // Firebase durumu
+                if (data.firebase && data.firebase.connected) {
+                    document.getElementById('firebaseStatus').textContent = '✅ Bağlı';
+                    document.getElementById('firebaseStatus').style.color = '#4ade80';
+                } else {
+                    document.getElementById('firebaseStatus').textContent = '⚠️ Bağlı değil';
+                    document.getElementById('firebaseStatus').style.color = '#fbbf24';
+                }
+                
+                // Şifreleme durumu
+                if (data.encryption && data.encryption.key_loaded) {
+                    document.getElementById('encryptionStatus').textContent = '✅ Hazır';
+                    document.getElementById('encryptionStatus').style.color = '#4ade80';
+                } else {
+                    document.getElementById('encryptionStatus').textContent = '❌ Anahtar yok';
+                    document.getElementById('encryptionStatus').style.color = '#f87171';
+                }
+                
+            } catch (error) {
+                document.getElementById('serverStatus').textContent = '❌ Bağlantı hatası';
+                document.getElementById('serverStatus').style.color = '#f87171';
+            }
+        }
+        
+        // Her 5 saniyede durumu güncelle
+        setInterval(checkStatus, 5000);
+    </script>
+</body>
+</html>
