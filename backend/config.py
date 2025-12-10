@@ -13,11 +13,11 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Şifreleme anahtarı dosyası
 KEY_FILE = os.path.join(BASE_DIR, "secret.key")
 
-# Firebase kimlik bilgileri dosyası
-CRED_FILE = os.path.join(BASE_DIR, "serviceAccountKey.json")
+# Firebase kimlik bilgileri dosyası (backend klasöründe)
+CRED_FILE = os.path.join(BASE_DIR, "backend", "serviceAccountKey.json")
 
 # Firestore koleksiyon adı
-COLLECTION_NAME = "ProtectedFiles"
+COLLECTION_NAME = "encrypted_files"
 
 # Sunucu ayarları
 HOST = "127.0.0.1"

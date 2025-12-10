@@ -1,12 +1,12 @@
 # ==============================================================================
 # FLASK UYGULAMASI (app.py)
 # ==============================================================================
-# Hafta 2 - Flask sunucusunun temel iskeleti
-# Ana sayfa ve sağlık kontrolü endpoint'leri
+# Hafta 3 - CRUD API endpoint'leri eklendi
+# Dosya yükleme, listeleme, silme işlemleri
 # ==============================================================================
 
 import os
-from flask import Flask, jsonify, send_from_directory
+from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 
 from .config import HOST, PORT, DEBUG, BASE_DIR
@@ -17,8 +17,8 @@ from .crypto_service import crypto_service
 # Flask uygulamasını oluştur
 app = Flask(__name__, static_folder=None)
 
-# CORS desteği ekle
-CORS(app)
+# CORS desteği ekle (tüm originlere izin ver)
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 # Frontend klasörü
 FRONTEND_DIR = os.path.join(BASE_DIR, "frontend")
@@ -41,7 +41,7 @@ def serve_static(filename):
 
 
 # ==============================================================================
-# API ENDPOINT'LERİ
+# API ENDPOINT'LERİ - SAĞLIK KONTROLÜ
 # ==============================================================================
 
 @app.route("/api/health", methods=["GET"])
@@ -73,12 +73,128 @@ def get_status():
 
 
 # ==============================================================================
+# API ENDPOINT'LERİ - DOSYA İŞLEMLERİ (Hafta 3)
+# ==============================================================================
+
+@app.route("/api/files", methods=["GET"])
+def get_files():
+    """
+    Korunan tüm dosyaların listesini döndürür.
+    
+    Returns:
+        JSON: Dosya listesi veya hata mesajı
+    """
+    try:
+        files = firebase_service.get_all_files()
+        return jsonify({
+            "success": True,
+            "files": files,
+            "count": len(files)
+        })
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
+@app.route("/api/files/upload", methods=["POST"])
+def upload_file():
+    """
+    Yeni bir dosyayı şifreleyip buluta yükler.
+    
+    Request Body:
+        filepath: Yüklenecek dosyanın tam yolu
+    
+    Returns:
+        JSON: Yükleme sonucu
+    """
+    try:
+        # JSON verisini al
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({
+                "success": False,
+                "error": "JSON verisi gerekli!"
+            }), 400
+        
+        filepath = data.get("filepath")
+        
+        if not filepath:
+            return jsonify({
+                "success": False,
+                "error": "Dosya yolu belirtilmedi!"
+            }), 400
+        
+        # Dosya yolunu normalize et
+        filepath = os.path.normpath(filepath)
+        
+        # Dosya var mı kontrol et
+        if not os.path.exists(filepath):
+            return jsonify({
+                "success": False,
+                "error": f"Dosya bulunamadı: {filepath}"
+            }), 404
+        
+        # Dosyayı yükle
+        result = firebase_service.upload_file(filepath)
+        
+        if result.get("success"):
+            return jsonify({
+                "success": True,
+                "message": f"Dosya başarıyla yüklendi: {result.get('filename')}",
+                "doc_id": result.get("doc_id"),
+                "hash": result.get("hash")
+            })
+        else:
+            return jsonify(result), 400
+            
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
+@app.route("/api/files/<doc_id>", methods=["DELETE"])
+def delete_file(doc_id):
+    """
+    Belirtilen dosyayı buluttan siler.
+    
+    Args:
+        doc_id: Silinecek dosyanın döküman ID'si
+    
+    Returns:
+        JSON: Silme sonucu
+    """
+    try:
+        if not doc_id:
+            return jsonify({
+                "success": False,
+                "error": "Döküman ID'si gerekli!"
+            }), 400
+        
+        result = firebase_service.delete_file(doc_id)
+        return jsonify(result)
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
+# ==============================================================================
 # SUNUCU BAŞLATMA
 # ==============================================================================
 
 def run_server():
     """Flask sunucusunu başlatır."""
-    print(f"🌐 Sunucu başlatılıyor: http://{HOST}:{PORT}")
+    print("=" * 50)
+    print("  FILE GUARDIAN - Hafta 3 Prototipi")
+    print("=" * 50)
+    print(f"🌐 Sunucu: http://{HOST}:{PORT}")
     print(f"📁 Frontend: {FRONTEND_DIR}")
     print(f"🔥 Firebase: {'Bağlı ✅' if firebase_service.is_connected else 'Bağlı değil ⚠️'}")
     print("-" * 50)

@@ -1,7 +1,7 @@
 /* ==============================================================================
-   FILE GUARDIAN - HAFTA 2 STİLLERİ
+   FILE GUARDIAN - HAFTA 3 STİLLERİ
    ==============================================================================
-   Temel UI stilleri ve dark theme renk paleti
+   Dosya listesi, butonlar ve geliştirilmiş UI bileşenleri
    ============================================================================== */
 
 /* Reset ve Temel Ayarlar */
@@ -78,6 +78,12 @@ body {
     padding-bottom: 10px;
 }
 
+.panel h3 {
+    color: #a78bfa;
+    margin: 15px 0 10px 0;
+    font-size: 1rem;
+}
+
 /* Input Grubu */
 .input-group {
     margin-bottom: 20px;
@@ -140,6 +146,24 @@ body {
     background: #047857;
 }
 
+.btn-secondary {
+    background: #475569;
+    color: white;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: #334155;
+}
+
+.btn-danger {
+    background: #dc2626;
+    color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+    background: #b91c1c;
+}
+
 .btn-warning {
     background: #d97706;
     color: white;
@@ -149,13 +173,60 @@ body {
     background: #b45309;
 }
 
+/* Küçük Butonlar */
+.btn-small {
+    padding: 5px 10px;
+    font-size: 0.8rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+.btn-small.btn-danger {
+    background: #dc2626;
+    color: white;
+}
+
+.btn-small.btn-danger:hover {
+    background: #b91c1c;
+}
+
 /* Dosya Listesi */
-.file-list {
+.file-list, .protected-files {
     background: #1a1a2e;
     border-radius: 8px;
     padding: 15px;
-    min-height: 150px;
     margin-bottom: 20px;
+}
+
+.file-list ul, .protected-files ul {
+    list-style: none;
+}
+
+.file-list li, .protected-files li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid #3b3b5c;
+}
+
+.file-list li:last-child, .protected-files li:last-child {
+    border-bottom: none;
+}
+
+.filename {
+    color: #e2e8f0;
+    flex: 1;
+    word-break: break-all;
+}
+
+.hash {
+    color: #64748b;
+    font-size: 0.8rem;
+    margin-left: 10px;
+    font-family: monospace;
 }
 
 .placeholder {
@@ -163,6 +234,11 @@ body {
     font-style: italic;
     text-align: center;
     padding: 10px;
+}
+
+/* Aksiyon Butonları */
+.actions {
+    margin-bottom: 20px;
 }
 
 /* Durum Kartı */
@@ -203,10 +279,10 @@ body {
     background: #0f0f1a;
     border-radius: 8px;
     padding: 15px;
-    max-height: 200px;
+    max-height: 250px;
     overflow-y: auto;
     font-family: 'Consolas', monospace;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
 }
 
 .log-entry {
@@ -233,5 +309,15 @@ body {
     
     .header h1 {
         font-size: 1.8rem;
+    }
+    
+    .file-list li, .protected-files li {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .hash {
+        margin-left: 0;
+        margin-top: 5px;
     }
 }

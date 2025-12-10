@@ -1,23 +1,25 @@
 # ==============================================================================
 # FİREBASE SERVİSİ (firebase_service.py)
 # ==============================================================================
-# Hafta 2 - Firebase bağlantı altyapısı
-# Firestore veritabanı bağlantısının temel kurulumu
+# Hafta 3 - Firestore CRUD işlemleri eklendi
+# Dosya yükleme, getirme, listeleme, silme işlemleri
 # ==============================================================================
 
 import os
+import base64
 import firebase_admin
 from firebase_admin import credentials, firestore
 
 from .config import CRED_FILE, COLLECTION_NAME, LOG_MESSAGES
+from .crypto_service import crypto_service
 
 
 class FirebaseService:
     """
     Firebase/Firestore servisi sınıfı.
     
-    Bu sınıf, Firebase bağlantısını yönetir.
-    Hafta 2'de sadece bağlantı kurulumu yapılmıştır.
+    Bu sınıf, Firebase bağlantısını ve Firestore CRUD işlemlerini yönetir.
+    Hafta 3'te dosya yükleme, getirme, listeleme ve silme eklendi.
     """
     
     def __init__(self):
@@ -64,6 +66,141 @@ class FirebaseService:
             "connected": self.is_connected,
             "collection": COLLECTION_NAME if self.is_connected else None
         }
+    
+    # ==========================================================================
+    # CRUD İŞLEMLERİ (Hafta 3)
+    # ==========================================================================
+    
+    def upload_file(self, filepath: str) -> dict:
+        """
+        Dosyayı şifreleyip Firestore'a yükler.
+        
+        Args:
+            filepath: Yüklenecek dosyanın yolu
+            
+        Returns:
+            dict: Yükleme sonucu (success, doc_id, hash, filename)
+        """
+        if not self.is_connected:
+            return {"success": False, "error": "Firebase bağlantısı yok!"}
+        
+        if not os.path.exists(filepath):
+            return {"success": False, "error": f"Dosya bulunamadı: {filepath}"}
+        
+        try:
+            # Dosyayı şifrele
+            encrypted_data = crypto_service.encrypt_file(filepath)
+            
+            # Dosya hash'ini hesapla
+            file_hash = crypto_service.calculate_hash(filepath)
+            
+            # Benzersiz döküman ID'si oluştur
+            doc_id = crypto_service.generate_doc_id(filepath)
+            
+            # Şifrelenmiş veriyi Base64'e dönüştür (Firestore uyumluluğu)
+            encrypted_base64 = base64.b64encode(encrypted_data).decode('utf-8')
+            
+            # Firestore'a kaydedilecek veri
+            data = {
+                "original_path": filepath,
+                "filename": os.path.basename(filepath),
+                "encrypted_content": encrypted_base64,
+                "file_hash": file_hash,
+                "timestamp": firestore.SERVER_TIMESTAMP,
+                "status": "active",
+                "file_size": os.path.getsize(filepath)
+            }
+            
+            # Firestore'a kaydet
+            self.db.collection(COLLECTION_NAME).document(doc_id).set(data)
+            
+            print(f"☁️ Dosya yüklendi: {os.path.basename(filepath)}")
+            
+            return {
+                "success": True,
+                "doc_id": doc_id,
+                "hash": file_hash,
+                "filename": os.path.basename(filepath)
+            }
+            
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+    
+    def get_file(self, doc_id: str) -> dict:
+        """
+        Firestore'dan tekil dosya verisini getirir.
+        
+        Args:
+            doc_id: Dosyanın döküman ID'si
+            
+        Returns:
+            dict: Dosya verisi veya None
+        """
+        if not self.is_connected:
+            return None
+        
+        try:
+            doc = self.db.collection(COLLECTION_NAME).document(doc_id).get()
+            
+            if doc.exists:
+                return doc.to_dict()
+            return None
+            
+        except Exception as e:
+            print(f"Dosya getirme hatası: {e}")
+            return None
+    
+    def get_all_files(self) -> list:
+        """
+        Tüm korunan dosyaların listesini getirir.
+        
+        Returns:
+            list: Dosya bilgileri listesi
+        """
+        if not self.is_connected:
+            return []
+        
+        try:
+            docs = self.db.collection(COLLECTION_NAME).stream()
+            files = []
+            
+            for doc in docs:
+                data = doc.to_dict()
+                files.append({
+                    "doc_id": doc.id,
+                    "filename": data.get("filename", "Bilinmiyor"),
+                    "original_path": data.get("original_path", ""),
+                    "file_hash": data.get("file_hash", "")[:16] + "...",
+                    "status": data.get("status", "unknown"),
+                    "file_size": data.get("file_size", 0)
+                })
+            
+            return files
+            
+        except Exception as e:
+            print(f"Dosya listesi hatası: {e}")
+            return []
+    
+    def delete_file(self, doc_id: str) -> dict:
+        """
+        Firestore'dan dosya kaydını siler.
+        
+        Args:
+            doc_id: Silinecek dosyanın döküman ID'si
+            
+        Returns:
+            dict: Silme işlemi sonucu
+        """
+        if not self.is_connected:
+            return {"success": False, "error": "Firebase bağlantısı yok!"}
+        
+        try:
+            self.db.collection(COLLECTION_NAME).document(doc_id).delete()
+            print(f"🗑️ Dosya silindi: {doc_id}")
+            return {"success": True, "message": "Dosya buluttan silindi."}
+            
+        except Exception as e:
+            return {"success": False, "error": str(e)}
 
 
 # Modül düzeyinde tekil örnek
