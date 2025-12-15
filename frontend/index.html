@@ -3,21 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>File Guardian - Hafta 3</title>
+    <title>File Guardian - Hafta 4</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <!-- ================================================================== -->
     <!-- ANA KONTEYNER -->
-    <!-- Hafta 3 - Dosya yükleme ve listeleme özellikleri eklendi -->
+    <!-- Hafta 4 - Dosya İzleme ve Otomatik Onarım Özellikleri -->
     <!-- ================================================================== -->
     
     <div class="container">
         <!-- Başlık -->
         <header class="header">
             <h1>🔒 File Guardian</h1>
-            <p class="subtitle">Dosya Şifreleme ve Koruma Sistemi</p>
-            <span class="version">Hafta 3 Prototipi</span>
+            <p class="subtitle">Dosya Şifreleme, Koruma ve İzleme Sistemi</p>
+            <span class="version">Hafta 4 Prototipi</span>
         </header>
 
         <!-- Ana İçerik -->
@@ -27,39 +27,48 @@
                 <h2>📁 Dosya İşlemleri</h2>
                 
                 <!-- Dosya Ekleme Formu -->
-                <div class="input-group">
-                    <label for="filepath">Dosya Yolu:</label>
-                    <input type="text" id="filepath" placeholder="C:\klasor\dosya.txt">
-                    <button class="btn btn-primary" id="addBtn">➕ Ekle</button>
-                </div>
+                <form id="addFileForm" class="input-group">
+                    <label for="pendingFilePath">Dosya Yolu:</label>
+                    <input type="text" id="pendingFilePath" placeholder="C:\klasor\dosya.txt">
+                    <button type="submit" class="btn btn-primary">➕ Ekle</button>
+                </form>
                 
                 <!-- Bekleyen Dosyalar Listesi -->
                 <div class="file-list" id="pendingList">
-                    <h3>📋 Eklenecek Dosyalar</h3>
-                    <ul id="pendingFiles">
-                        <li class="placeholder">Henüz dosya eklenmedi.</li>
-                    </ul>
+                    <div id="pendingFileList">
+                        <div class="empty-state small">
+                            <p>Bekleyen dosya yok</p>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- Aksiyon Butonları -->
                 <div class="actions">
-                    <button class="btn btn-success" id="uploadBtn">☁️ Buluta Yükle</button>
-                    <button class="btn btn-secondary" id="clearBtn">🗑️ Listeyi Temizle</button>
+                    <button class="btn btn-success" id="uploadAllBtn">📤 Tümünü Yükle</button>
+                    <button class="btn btn-secondary" id="clearPendingBtn">🗑️ Listeyi Temizle</button>
                 </div>
                 
                 <!-- Korunan Dosyalar -->
                 <div class="protected-files">
-                    <h3>🛡️ Korunan Dosyalar</h3>
-                    <ul id="protectedFiles">
-                        <li class="placeholder">Korunan dosya yok.</li>
-                    </ul>
+                    <div class="section-header">
+                        <h3>🛡️ Korunan Dosyalar</h3>
+                        <button class="btn-icon" id="refreshFilesBtn" title="Yenile">🔄</button>
+                    </div>
+                    <div id="fileList">
+                        <div class="empty-state">
+                            <span class="empty-icon">📁</span>
+                            <p>Henüz korunan dosya yok</p>
+                            <small>Dosya eklemek için yukarıdaki formu kullanın</small>
+                        </div>
+                    </div>
                 </div>
             </section>
 
-            <!-- Sağ Panel - Durum -->
+            <!-- Sağ Panel - Durum ve İzleme -->
             <section class="panel">
                 <h2>📊 Sistem Durumu</h2>
                 
+                <!-- Sistem Durumu -->
                 <div class="status-card">
                     <div class="status-item">
                         <span class="label">Sunucu:</span>
@@ -75,10 +84,43 @@
                     </div>
                 </div>
                 
+                <!-- Hafta 4 - Dosya İzleme Kontrolü -->
+                <div class="monitoring-section">
+                    <div class="section-header">
+                        <h3>🔍 Dosya İzleme</h3>
+                        <button class="btn-icon" id="refreshStatusBtn" title="Durumu Yenile">🔄</button>
+                    </div>
+                    
+                    <div id="monitoringStatus" class="monitoring-status">
+                        <div class="status-indicator status-inactive">
+                            <span class="status-dot"></span>
+                            <span class="status-text">⏸️ Pasif</span>
+                        </div>
+                        <div class="status-info">
+                            <span>Korunan: 0 dosya</span>
+                        </div>
+                    </div>
+                    
+                    <div class="monitoring-controls">
+                        <button class="btn btn-success" id="startMonitoringBtn">▶️ Korumayı Başlat</button>
+                        <button class="btn btn-danger" id="stopMonitoringBtn" disabled>⏹️ Korumayı Durdur</button>
+                    </div>
+                </div>
+                
+                <!-- Hafta 4 - Güvenlik Logları -->
                 <div class="log-panel">
-                    <h3>📋 Sistem Günlüğü</h3>
-                    <div class="log-content" id="logContent">
-                        <p class="log-entry">[Hafta 3] CRUD işlemleri aktif.</p>
+                    <div class="section-header">
+                        <h3>📋 Güvenlik Logları</h3>
+                        <div class="header-actions">
+                            <button class="btn-icon" id="refreshLogsBtn" title="Yenile">🔄</button>
+                            <button class="btn-icon" id="clearLogsBtn" title="Temizle">🗑️</button>
+                        </div>
+                    </div>
+                    <div class="log-content" id="logsContainer">
+                        <div class="empty-state">
+                            <span class="empty-icon">📋</span>
+                            <p>Henüz güvenlik logu yok</p>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -87,153 +129,79 @@
         <!-- Footer -->
         <footer class="footer">
             <p>File Guardian © 2024 - Scripting Languages Dersi Projesi</p>
+            <small>Hafta 4 - Dosya İzleme ve Otomatik Onarım</small>
         </footer>
     </div>
 
-    <!-- JavaScript Modülleri (Hafta 3) -->
+    <!-- JavaScript Modülleri (Hafta 4) -->
     <script src="js/config.js"></script>
     <script src="js/state.js"></script>
     <script src="js/api.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/events.js"></script>
     
-    <!-- Ana Uygulama Scripti -->
+    <!-- Ana Uygulama Scripti (Hafta 4) -->
     <script>
         // =====================================================================
-        // HAFTA 3 - UYGULAMA BAŞLATICI
+        // HAFTA 4 - UYGULAMA BAŞLATICI
+        // Dosya İzleme ve Otomatik Onarım Özellikleri
         // =====================================================================
         
-        document.addEventListener('DOMContentLoaded', function() {
-            // Durum kontrolünü başlat
-            checkStatus();
-            loadProtectedFiles();
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('🚀 File Guardian Hafta 4 başlatılıyor...');
             
-            // Event listener'ları bağla
-            setupEventListeners();
+            // İlk yüklemeler
+            await Promise.all([
+                checkStatus(),
+                loadProtectedFiles(),
+                loadMonitoringStatus(),
+                loadSecurityLogs()
+            ]);
             
-            // Periyodik güncelleme
+            // Periyodik güncellemeler
             setInterval(checkStatus, CONFIG.POLL_INTERVAL);
+            setInterval(loadSecurityLogs, CONFIG.POLL_INTERVAL * 2);
+            
+            console.log('✅ File Guardian Hafta 4 hazır!');
         });
-        
-        // Event listener'ları kur
-        function setupEventListeners() {
-            // Dosya ekleme butonu
-            document.getElementById('addBtn').addEventListener('click', addFile);
-            
-            // Enter tuşu ile ekleme
-            document.getElementById('filepath').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') addFile();
-            });
-            
-            // Yükleme butonu
-            document.getElementById('uploadBtn').addEventListener('click', uploadFiles);
-            
-            // Temizleme butonu
-            document.getElementById('clearBtn').addEventListener('click', clearPendingFiles);
-        }
-        
-        // Dosya ekle
-        function addFile() {
-            const input = document.getElementById('filepath');
-            const filepath = input.value.trim();
-            
-            if (filepath) {
-                AppState.addPendingFile(filepath);
-                updatePendingList();
-                input.value = '';
-                addLog('➕ Dosya eklendi: ' + filepath);
-            }
-        }
-        
-        // Bekleyen dosya listesini güncelle
-        function updatePendingList() {
-            const list = document.getElementById('pendingFiles');
-            
-            if (AppState.pendingFiles.length === 0) {
-                list.innerHTML = '<li class="placeholder">Henüz dosya eklenmedi.</li>';
-            } else {
-                list.innerHTML = AppState.pendingFiles.map((file, index) => 
-                    `<li>
-                        <span class="filename">${file}</span>
-                        <button class="btn-small btn-danger" onclick="removePendingFile(${index})">✕</button>
-                    </li>`
-                ).join('');
-            }
-        }
-        
-        // Bekleyen dosyayı kaldır
-        function removePendingFile(index) {
-            AppState.pendingFiles.splice(index, 1);
-            updatePendingList();
-        }
-        
-        // Bekleyen dosyaları temizle
-        function clearPendingFiles() {
-            AppState.clearPendingFiles();
-            updatePendingList();
-            addLog('🗑️ Liste temizlendi.');
-        }
-        
-        // Dosyaları yükle
-        async function uploadFiles() {
-            if (AppState.pendingFiles.length === 0) {
-                addLog('⚠️ Yüklenecek dosya yok!');
-                return;
-            }
-            
-            addLog('☁️ Dosyalar yükleniyor...');
-            
-            for (const filepath of AppState.pendingFiles) {
-                const result = await ApiService.uploadFile(filepath);
-                
-                if (result.success) {
-                    addLog('✅ Yüklendi: ' + filepath);
-                } else {
-                    addLog('❌ Hata: ' + (result.error || 'Bilinmeyen hata'));
-                }
-            }
-            
-            AppState.clearPendingFiles();
-            updatePendingList();
-            loadProtectedFiles();
-        }
         
         // Korunan dosyaları yükle
         async function loadProtectedFiles() {
-            const result = await ApiService.getFiles();
-            
-            if (result.success) {
-                AppState.setProtectedFiles(result.files);
-                updateProtectedList();
-            }
-        }
-        
-        // Korunan dosya listesini güncelle
-        function updateProtectedList() {
-            const list = document.getElementById('protectedFiles');
-            
-            if (AppState.protectedFiles.length === 0) {
-                list.innerHTML = '<li class="placeholder">Korunan dosya yok.</li>';
-            } else {
-                list.innerHTML = AppState.protectedFiles.map(file => 
-                    `<li>
-                        <span class="filename">${file.filename}</span>
-                        <span class="hash">${file.file_hash}</span>
-                        <button class="btn-small btn-danger" onclick="deleteFile('${file.doc_id}')">🗑️</button>
-                    </li>`
-                ).join('');
-            }
-        }
-        
-        // Dosya sil
-        async function deleteFile(docId) {
-            if (confirm('Bu dosyayı korumadan kaldırmak istediğinize emin misiniz?')) {
-                const result = await ApiService.deleteFile(docId);
+            try {
+                const result = await ApiService.getFiles();
                 
                 if (result.success) {
-                    addLog('🗑️ Dosya korumadan kaldırıldı.');
-                    loadProtectedFiles();
-                } else {
-                    addLog('❌ Silme hatası: ' + result.error);
+                    AppState.setProtectedFiles(result.files || []);
+                    UI.updateFileList(result.files || []);
                 }
+            } catch (error) {
+                console.error('Dosya yükleme hatası:', error);
+            }
+        }
+        
+        // Monitoring durumunu yükle
+        async function loadMonitoringStatus() {
+            try {
+                const result = await ApiService.request(CONFIG.API_BASE_URL + '/monitoring/status');
+                
+                if (result) {
+                    UI.updateMonitoringStatus(result);
+                }
+            } catch (error) {
+                console.error('Monitoring durumu hatası:', error);
+            }
+        }
+        
+        // Güvenlik loglarını yükle
+        async function loadSecurityLogs() {
+            try {
+                const result = await ApiService.request(CONFIG.API_BASE_URL + '/logs');
+                
+                if (result.success) {
+                    UI.updateLogs(result.logs || []);
+                }
+            } catch (error) {
+                console.error('Log yükleme hatası:', error);
             }
         }
         
@@ -267,16 +235,6 @@
                 document.getElementById('serverStatus').textContent = '❌ Bağlantı hatası';
                 document.getElementById('serverStatus').style.color = '#f87171';
             }
-        }
-        
-        // Log ekle
-        function addLog(message) {
-            const logContent = document.getElementById('logContent');
-            const timestamp = new Date().toLocaleTimeString('tr-TR');
-            const entry = document.createElement('p');
-            entry.className = 'log-entry';
-            entry.textContent = `[${timestamp}] ${message}`;
-            logContent.insertBefore(entry, logContent.firstChild);
         }
     </script>
 </body>

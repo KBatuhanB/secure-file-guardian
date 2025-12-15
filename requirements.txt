@@ -1,10 +1,11 @@
 # ==============================================================================
 # PYTHON BAĞIMLILIKLARI
 # ==============================================================================
-# Hafta 2 sonunda belirlenen temel bağımlılıklar
+# Hafta 4 sonunda belirlenen temel bağımlılıklar
 # ==============================================================================
 
 flask
 flask-cors
 cryptography
 firebase-admin
+watchdog
