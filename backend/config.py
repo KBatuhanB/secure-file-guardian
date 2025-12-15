@@ -2,7 +2,7 @@
 # YAPILANDIRMA DOSYASI (config.py)
 # ==============================================================================
 # Proje genelinde kullanılan sabitler ve ayarlar
-# Hafta 2 - Temel yapılandırma
+# Temel yapılandırma
 # ==============================================================================
 
 import os

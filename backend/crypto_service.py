@@ -1,7 +1,7 @@
 # ==============================================================================
 # ŞİFRELEME SERVİSİ (crypto_service.py)
 # ==============================================================================
-# Hafta 3 - SHA256 hash ve dosya bütünlük kontrolü eklendi
+# SHA256 hash ve dosya bütünlük kontrolü eklendi
 # Fernet şifreleme + hash hesaplama + döküman ID üretimi
 # ==============================================================================
 

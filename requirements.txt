@@ -1,10 +1,11 @@
 # ==============================================================================
-# PYTHON BAĞIMLILIKLARI
+# PYTHON DEPENDENCIES
 # ==============================================================================
-# Hafta 2 sonunda belirlenen temel bağımlılıklar
+# File Guardian - Required packages
 # ==============================================================================
 
 flask
 flask-cors
 cryptography
 firebase-admin
+watchdog

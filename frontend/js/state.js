@@ -1,9 +1,4 @@
-// ==============================================================================
-// DURUM YÖNETİMİ MODÜLÜ (state.js)
-// ==============================================================================
-// Hafta 3 - Uygulama durumunu yönetir
-// Dosya listesi, bekleyen dosyalar ve sistem durumu burada tutulur
-// ==============================================================================
+
 
 /**
  * Uygulama durum nesnesi
@@ -72,6 +67,14 @@ const AppState = {
             firebaseConnected: status.firebase?.connected || false,
             encryptionReady: status.encryption?.key_loaded || false
         };
+    },
+    
+    /**
+     * Sistem durumunu ayarlar (alias for updateSystemStatus)
+     * @param {Object} status - Durum bilgisi
+     */
+    setSystemStatus: function(status) {
+        this.updateSystemStatus(status);
     }
 };
 

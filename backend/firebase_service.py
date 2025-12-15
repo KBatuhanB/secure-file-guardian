@@ -1,7 +1,7 @@
 # ==============================================================================
 # FİREBASE SERVİSİ (firebase_service.py)
 # ==============================================================================
-# Hafta 3 - Firestore CRUD işlemleri eklendi
+# Firestore CRUD işlemleri eklendi
 # Dosya yükleme, getirme, listeleme, silme işlemleri
 # ==============================================================================
 
@@ -85,7 +85,7 @@ class FirebaseService:
             return {"success": False, "error": "Firebase bağlantısı yok!"}
         
         if not os.path.exists(filepath):
-            return {"success": False, "error": f"Dosya bulunamadı: {filepath}"}
+            return {"success": False, "error": f"File not found: {filepath}"}
         
         try:
             # Dosyayı şifrele
@@ -114,7 +114,7 @@ class FirebaseService:
             # Firestore'a kaydet
             self.db.collection(COLLECTION_NAME).document(doc_id).set(data)
             
-            print(f"☁️ Dosya yüklendi: {os.path.basename(filepath)}")
+            print(f"☁️ File uploaded: {os.path.basename(filepath)}")
             
             return {
                 "success": True,
@@ -147,7 +147,7 @@ class FirebaseService:
             return None
             
         except Exception as e:
-            print(f"Dosya getirme hatası: {e}")
+            print(f"File retrieval error: {e}")
             return None
     
     def get_all_files(self) -> list:
@@ -166,11 +166,13 @@ class FirebaseService:
             
             for doc in docs:
                 data = doc.to_dict()
+                full_hash = data.get("file_hash", "")
                 files.append({
                     "doc_id": doc.id,
                     "filename": data.get("filename", "Bilinmiyor"),
                     "original_path": data.get("original_path", ""),
-                    "file_hash": data.get("file_hash", "")[:16] + "...",
+                    "file_hash": full_hash,  # Tam hash (watcher için)
+                    "file_hash_short": full_hash[:16] + "..." if full_hash else "",  # Kısa hash (UI için)
                     "status": data.get("status", "unknown"),
                     "file_size": data.get("file_size", 0)
                 })
@@ -178,7 +180,7 @@ class FirebaseService:
             return files
             
         except Exception as e:
-            print(f"Dosya listesi hatası: {e}")
+            print(f"File list error: {e}")
             return []
     
     def delete_file(self, doc_id: str) -> dict:
@@ -196,11 +198,65 @@ class FirebaseService:
         
         try:
             self.db.collection(COLLECTION_NAME).document(doc_id).delete()
-            print(f"🗑️ Dosya silindi: {doc_id}")
+            print(f"🗑️ File deleted: {doc_id}")
             return {"success": True, "message": "Dosya buluttan silindi."}
             
         except Exception as e:
             return {"success": False, "error": str(e)}
+    
+    def get_encrypted_data(self, doc_id: str) -> bytes:
+        """
+        Firestore'dan şifrelenmiş dosya içeriğini getirir.
+        
+        Args:
+            doc_id: Dosyanın döküman ID'si
+            
+        Returns:
+            bytes: Şifrelenmiş veri veya None
+        """
+        if not self.is_connected:
+            return None
+        
+        try:
+            doc = self.db.collection(COLLECTION_NAME).document(doc_id).get()
+            
+            if doc.exists:
+                data = doc.to_dict()
+                encrypted_content = data.get("encrypted_content")
+                if encrypted_content:
+                    return base64.b64decode(encrypted_content)
+            return None
+            
+        except Exception as e:
+            print(f"Şifreli veri getirme hatası: {e}")
+            return None
+    
+    def get_file_by_path(self, filepath: str) -> dict:
+        """
+        Dosya yoluna göre Firebase kaydını getirir.
+        
+        Args:
+            filepath: Orijinal dosya yolu
+            
+        Returns:
+            dict: Dosya verisi veya None
+        """
+        if not self.is_connected:
+            return None
+        
+        try:
+            doc_id = crypto_service.generate_doc_id(filepath)
+            doc = self.db.collection(COLLECTION_NAME).document(doc_id).get()
+            
+            if doc.exists:
+                data = doc.to_dict()
+                data['doc_id'] = doc.id
+                return data
+            return None
+            
+        except Exception as e:
+            print(f"Dosya arama hatası: {e}")
+            return None
 
 
 # Modül düzeyinde tekil örnek
