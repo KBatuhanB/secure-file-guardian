@@ -216,4 +216,4 @@ curl http://127.0.0.1:5000/api/status
 
 This project was developed as part of the Scripting Languages course.
 
-**File Guardian © 2024-2025**
+**File Guardian © 2025-2026**
