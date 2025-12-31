@@ -15,13 +15,13 @@
  * - Event delegation ile dinamik element yönetimi
  */
 const EventHandlers = {
-    
+
     /**
      * Tüm event listener'ları başlatır
      */
-    init: function() {
+    init: function () {
         console.log('🎯 Event handlers başlatılıyor...');
-        
+
         // DOM yüklendikten sonra çalıştır
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => this._setupAllHandlers());
@@ -29,54 +29,54 @@ const EventHandlers = {
             this._setupAllHandlers();
         }
     },
-    
+
     /**
      * Tüm handler'ları ayarlar
      */
-    _setupAllHandlers: function() {
+    _setupAllHandlers: function () {
         this._setupFormHandlers();
         this._setupButtonHandlers();
         this._setupKeyboardHandlers();
         this._setupDelegatedHandlers();
-        
+
         console.log('✅ Event handlers hazır');
     },
-    
+
     // ==========================================================================
     // FORM HANDLERS
     // ==========================================================================
-    
+
     /**
      * Setup form submit events
      */
-    _setupFormHandlers: function() {
+    _setupFormHandlers: function () {
         // File upload form
         const uploadForm = document.getElementById('uploadForm');
         if (uploadForm) {
             uploadForm.addEventListener('submit', (e) => this._handleUploadSubmit(e));
         }
-        
+
         // Add file form (pending list)
         const addFileForm = document.getElementById('addFileForm');
         if (addFileForm) {
             addFileForm.addEventListener('submit', (e) => this._handleAddFileSubmit(e));
         }
     },
-    
+
     /**
      * File upload form submit handler
      */
-    _handleUploadSubmit: async function(event) {
+    _handleUploadSubmit: async function (event) {
         event.preventDefault();
-        
+
         const filepathInput = document.getElementById('filepathInput');
         const filepath = filepathInput?.value?.trim();
-        
+
         if (!filepath) {
             UI.showToast('Please enter a file path!', 'warning');
             return;
         }
-        
+
         // Loading state
         const submitBtn = event.target.querySelector('button[type="submit"]');
         const originalText = submitBtn?.textContent;
@@ -84,14 +84,14 @@ const EventHandlers = {
             submitBtn.disabled = true;
             submitBtn.textContent = '⏳ Uploading...';
         }
-        
+
         try {
             const result = await ApiService.uploadFile(filepath);
-            
+
             if (result.success) {
                 UI.showToast(`✅ ${result.message}`, 'success');
                 filepathInput.value = '';
-                
+
                 // Update file list
                 await this._refreshFileList();
             } else {
@@ -106,85 +106,85 @@ const EventHandlers = {
             }
         }
     },
-    
+
     /**
      * Add file (pending list) form submit handler
      */
-    _handleAddFileSubmit: function(event) {
+    _handleAddFileSubmit: function (event) {
         event.preventDefault();
-        
+
         const input = document.getElementById('pendingFilePath');
         const filepath = input?.value?.trim();
-        
+
         if (!filepath) {
             UI.showToast('Please enter a file path!', 'warning');
             return;
         }
-        
+
         // Add to state
         AppState.addPendingFile(filepath);
-        
+
         // Update UI
         UI.updatePendingList();
-        
+
         // Clear input
         input.value = '';
-        
+
         UI.showToast(`📁 File added to list: ${filepath.split(/[\\/]/).pop()}`, 'info');
     },
-    
+
     // ==========================================================================
     // BUTTON HANDLERS
     // ==========================================================================
-    
+
     /**
      * Setup button click events
      */
-    _setupButtonHandlers: function() {
+    _setupButtonHandlers: function () {
         // Start Protection button
         this._addClickHandler('startMonitoringBtn', () => this._handleStartMonitoring());
-        
+
         // Stop Protection button
         this._addClickHandler('stopMonitoringBtn', () => this._handleStopMonitoring());
-        
+
         // Upload Files button
         this._addClickHandler('uploadAllBtn', () => this._handleUploadAll());
-        
+
         // Clear List button
         this._addClickHandler('clearPendingBtn', () => this._handleClearPending());
-        
+
         // Clear Logs button
         this._addClickHandler('clearLogsBtn', () => this._handleClearLogs());
-        
+
         // Refresh buttons
         this._addClickHandler('refreshFilesBtn', () => this._refreshFileList());
         this._addClickHandler('refreshLogsBtn', () => this._refreshLogsManual());
         this._addClickHandler('refreshStatusBtn', () => this._refreshStatus());
     },
-    
+
     /**
      * Click handler helper function
      */
-    _addClickHandler: function(elementId, handler) {
+    _addClickHandler: function (elementId, handler) {
         const element = document.getElementById(elementId);
         if (element) {
             element.addEventListener('click', handler);
         }
     },
-    
+
     /**
      * Start protection handler
      */
-    _handleStartMonitoring: async function() {
+    _handleStartMonitoring: async function () {
         const btn = document.getElementById('startMonitoringBtn');
         if (btn) btn.disabled = true;
-        
+
         try {
             const result = await ApiService.request(
                 '/monitoring/start',
                 { method: 'POST' }
             );
-            
+
             if (result.success) {
                 UI.showToast(`🛡️ Protection started! (${result.protected_count} files)`, 'success');
                 await this._refreshStatus();
@@ -199,20 +199,20 @@ const EventHandlers = {
             if (btn) btn.disabled = false; // Sadece hata durumunda butonu aç
         }
     },
-    
+
     /**
      * Stop protection handler
      */
-    _handleStopMonitoring: async function() {
+    _handleStopMonitoring: async function () {
         const btn = document.getElementById('stopMonitoringBtn');
         if (btn) btn.disabled = true;
-        
+
         try {
             const result = await ApiService.request(
                 '/monitoring/stop',
                 { method: 'POST' }
             );
-            
+
             if (result.success) {
                 UI.showToast('🛑 Protection stopped', 'info');
                 await this._refreshStatus();
@@ -227,60 +227,70 @@ const EventHandlers = {
             if (btn) btn.disabled = false; // Sadece hata durumunda butonu aç
         }
     },
-    
+
     /**
      * Upload all pending files
      */
-    _handleUploadAll: async function() {
+    _handleUploadAll: async function () {
         const pendingFiles = AppState.pendingFiles;
-        
+
         if (pendingFiles.length === 0) {
             UI.showToast('No files to upload!', 'warning');
             return;
         }
-        
+
         const btn = document.getElementById('uploadAllBtn');
         if (btn) {
             btn.disabled = true;
             btn.textContent = '⏳ Uploading...';
         }
-        
+
         let successCount = 0;
         let errorCount = 0;
-        
-        for (const filepath of pendingFiles) {
+        const uploadedFiles = []; // Track successfully uploaded files
+
+        // Create a copy of the array to avoid mutation during iteration
+        const filesToUpload = [...pendingFiles];
+
+        for (const filepath of filesToUpload) {
             try {
                 const result = await ApiService.uploadFile(filepath);
                 if (result.success) {
                     successCount++;
-                    AppState.removePendingFile(filepath);
+                    uploadedFiles.push(filepath); // Track for later removal
                 } else {
                     errorCount++;
+                    console.error(`Upload failed for ${filepath}:`, result.error);
                 }
             } catch (error) {
                 errorCount++;
+                console.error(`Upload error for ${filepath}:`, error);
             }
         }
-        
+
+        // Remove successfully uploaded files after loop completes
+        uploadedFiles.forEach(filepath => AppState.removePendingFile(filepath));
+
         UI.updatePendingList();
         await this._refreshFileList();
-        
+        await this._refreshStatus(); // Update File Monitoring "Protected: X files" counter
+
         if (successCount > 0) {
             UI.showToast(`✅ ${successCount} files uploaded${errorCount > 0 ? `, ${errorCount} errors` : ''}`, 'success');
         } else {
             UI.showToast(`❌ ${errorCount} files failed to upload`, 'error');
         }
-        
+
         if (btn) {
             btn.disabled = false;
             btn.textContent = '📤 Upload All';
         }
     },
-    
+
     /**
      * Clear pending list
      */
-    _handleClearPending: function() {
+    _handleClearPending: function () {
         UI.showModal({
             title: 'Clear List',
             message: 'All pending files will be removed from the list. Are you sure?',
@@ -293,17 +303,17 @@ const EventHandlers = {
             }
         });
     },
-    
+
     /**
      * Clear logs
      */
-    _handleClearLogs: async function() {
+    _handleClearLogs: async function () {
         try {
             const result = await ApiService.request(
                 '/logs',
                 { method: 'DELETE' }
             );
-            
+
             if (result.success) {
                 UI.updateLogs([]);
                 UI.showToast('🗑️ Logs cleared', 'info');
@@ -312,15 +322,15 @@ const EventHandlers = {
             UI.showToast(`❌ Error: ${error.message}`, 'error');
         }
     },
-    
+
     // ==========================================================================
     // KEYBOARD HANDLERS
     // ==========================================================================
-    
+
     /**
      * Setup keyboard events
      */
-    _setupKeyboardHandlers: function() {
+    _setupKeyboardHandlers: function () {
         // Enter key to add file
         const pendingInput = document.getElementById('pendingFilePath');
         if (pendingInput) {
@@ -331,7 +341,7 @@ const EventHandlers = {
                 }
             });
         }
-        
+
         // Enter key to upload file
         const filepathInput = document.getElementById('filepathInput');
         if (filepathInput) {
@@ -342,7 +352,7 @@ const EventHandlers = {
                 }
             });
         }
-        
+
         // Escape to close modal
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
@@ -350,39 +360,39 @@ const EventHandlers = {
             }
         });
     },
-    
+
     // ==========================================================================
     // DELEGATED HANDLERS (Event Delegation Pattern)
     // ==========================================================================
-    
+
     /**
      * Event delegation for dynamic element handlers
      */
-    _setupDelegatedHandlers: function() {
+    _setupDelegatedHandlers: function () {
         // File list container
         const fileListContainer = document.getElementById('fileList');
         if (fileListContainer) {
             fileListContainer.addEventListener('click', (e) => this._handleFileListClick(e));
         }
-        
+
         // Pending file list container
         const pendingListContainer = document.getElementById('pendingFileList');
         if (pendingListContainer) {
             pendingListContainer.addEventListener('click', (e) => this._handlePendingListClick(e));
         }
     },
-    
+
     /**
      * Handle click events in file list (Event Delegation)
      */
-    _handleFileListClick: async function(event) {
+    _handleFileListClick: async function (event) {
         const target = event.target;
-        
+
         // Delete button
         if (target.classList.contains('delete-btn') || target.closest('.delete-btn')) {
             const btn = target.classList.contains('delete-btn') ? target : target.closest('.delete-btn');
             const docId = btn.dataset.docId;
-            
+
             if (docId) {
                 UI.showModal({
                     title: 'Delete File',
@@ -396,29 +406,29 @@ const EventHandlers = {
                 });
             }
         }
-        
+
         // Download button
         if (target.classList.contains('download-btn') || target.closest('.download-btn')) {
             const btn = target.classList.contains('download-btn') ? target : target.closest('.download-btn');
             const docId = btn.dataset.docId;
-            
+
             if (docId) {
                 UI.showToast('📥 Download feature coming soon...', 'info');
             }
         }
     },
-    
+
     /**
      * Handle click events in pending list (Event Delegation)
      */
-    _handlePendingListClick: function(event) {
+    _handlePendingListClick: function (event) {
         const target = event.target;
-        
+
         // Remove button
         if (target.classList.contains('remove-pending-btn') || target.closest('.remove-pending-btn')) {
             const btn = target.classList.contains('remove-pending-btn') ? target : target.closest('.remove-pending-btn');
             const filepath = btn.dataset.filepath;
-            
+
             if (filepath) {
                 AppState.removePendingFile(filepath);
                 UI.updatePendingList();
@@ -426,21 +436,22 @@ const EventHandlers = {
             }
         }
     },
-    
+
     // ==========================================================================
     // HELPER METHODS
     // ==========================================================================
-    
+
     /**
      * Delete file operation
      */
-    _deleteFile: async function(docId) {
+    _deleteFile: async function (docId) {
         try {
             const result = await ApiService.deleteFile(docId);
-            
+
             if (result.success) {
                 UI.showToast('✅ File deleted', 'success');
                 await this._refreshFileList();
+                await this._refreshStatus(); // Update File Monitoring counter
             } else {
                 UI.showToast(`❌ ${result.error}`, 'error');
             }
@@ -448,11 +459,11 @@ const EventHandlers = {
             UI.showToast(`❌ Error: ${error.message}`, 'error');
         }
     },
-    
+
     /**
      * Refresh file list
      */
-    _refreshFileList: async function() {
+    _refreshFileList: async function () {
         try {
             const result = await ApiService.getFiles();
             if (result.success) {
@@ -463,11 +474,11 @@ const EventHandlers = {
             console.error('File list refresh error:', error);
         }
     },
-    
+
     /**
      * Refresh logs (normal refresh - sadece yeni loglar)
      */
-    _refreshLogs: async function() {
+    _refreshLogs: async function () {
         try {
             const result = await ApiService.request('/logs');
             if (result.success) {
@@ -477,21 +488,21 @@ const EventHandlers = {
             console.error('Log refresh error:', error);
         }
     },
-    
+
     /**
      * Refresh status
      */
-    _refreshStatus: async function() {
+    _refreshStatus: async function () {
         try {
             const [statusResult, monitoringResult] = await Promise.all([
                 ApiService.getStatus(),
                 ApiService.request('/monitoring/status')
             ]);
-            
+
             if (statusResult.success) {
                 AppState.setSystemStatus(statusResult);
             }
-            
+
             if (monitoringResult.success) {
                 UI.updateMonitoringStatus(monitoringResult);
             }
@@ -499,29 +510,29 @@ const EventHandlers = {
             console.error('Status refresh error:', error);
         }
     },
-    
+
     // Log polling interval ID
     _logPollingInterval: null,
-    
+
     /**
      * Monitoring aktifken log polling başlat (3 saniyede bir)
      */
-    _startLogPolling: function() {
+    _startLogPolling: function () {
         // Önce varsa durdur
         this._stopLogPolling();
-        
+
         // 3 saniyede bir kontrol et
         this._logPollingInterval = setInterval(async () => {
             await this._refreshLogs();
         }, 3000);
-        
+
         console.log('🔄 Log polling started (3s interval)');
     },
-    
+
     /**
      * Log polling'i durdur
      */
-    _stopLogPolling: function() {
+    _stopLogPolling: function () {
         if (this._logPollingInterval) {
             clearInterval(this._logPollingInterval);
             this._logPollingInterval = null;

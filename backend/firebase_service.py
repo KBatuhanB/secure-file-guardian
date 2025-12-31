@@ -84,6 +84,9 @@ class FirebaseService:
         if not self.is_connected:
             return {"success": False, "error": "Firebase bağlantısı yok!"}
         
+        # Dosya yolunu normalize et (tutarlı doc_id için)
+        filepath = os.path.abspath(filepath)
+        
         if not os.path.exists(filepath):
             return {"success": False, "error": f"File not found: {filepath}"}
         
@@ -114,7 +117,7 @@ class FirebaseService:
             # Firestore'a kaydet
             self.db.collection(COLLECTION_NAME).document(doc_id).set(data)
             
-            print(f"☁️ File uploaded: {os.path.basename(filepath)}")
+            print(f"☁️ File uploaded: {os.path.basename(filepath)} (doc_id: {doc_id[:12]}...)")
             
             return {
                 "success": True,

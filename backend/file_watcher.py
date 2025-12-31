@@ -169,11 +169,24 @@ class FileIntegrityHandler(FileSystemEventHandler):
             return
         
         if current_hash != expected_hash:
+            # Değiştirilen içeriği oku ve logla
+            modified_content = self._read_file_content(filepath)
+            
             self._log_event(
                 "violation", 
                 f"🚨 INTEGRITY VIOLATION: {os.path.basename(filepath)} - Hash mismatch!", 
                 filepath
             )
+            
+            # Yazılan içeriği ayrı bir log olarak göster
+            if modified_content:
+                # İçeriği kısalt (çok uzunsa)
+                display_content = modified_content[:500] + "..." if len(modified_content) > 500 else modified_content
+                self._log_event(
+                    "warning",
+                    f"📝 Attempted content: \"{display_content}\"",
+                    filepath
+                )
             
             # Violation callback
             if self.on_violation:
@@ -183,6 +196,24 @@ class FileIntegrityHandler(FileSystemEventHandler):
             self._auto_restore(filepath, reason="modified")
         else:
             self._log_event("success", f"Integrity verified: {os.path.basename(filepath)}", filepath)
+    
+    def _read_file_content(self, filepath: str) -> str:
+        """Dosya içeriğini okur (text dosyaları için)."""
+        try:
+            if not os.path.exists(filepath):
+                return None
+            
+            # Önce text olarak okumayı dene
+            try:
+                with open(filepath, "r", encoding="utf-8") as f:
+                    return f.read()
+            except UnicodeDecodeError:
+                # Binary dosyaysa, hex olarak göster
+                with open(filepath, "rb") as f:
+                    data = f.read(200)  # İlk 200 byte
+                    return f"[Binary data: {data.hex()[:100]}...]"
+        except Exception as e:
+            return f"[Could not read: {str(e)}]"
     
     def _auto_restore(self, filepath: str, reason: str = "unknown"):
         """Dosyayı otomatik olarak onarır (şifreli yedekten geri yükler)."""
@@ -276,7 +307,14 @@ class FileWatcherService:
             
             # Dizini izleme listesine ekle
             directory = os.path.dirname(abs_path)
+            is_new_directory = directory not in self._watched_directories
             self._watched_directories.add(directory)
+            
+            # Eğer izleme çalışıyorsa ve yeni bir dizin eklendiyse, observer'a schedule et
+            if self._is_running and self._observer and is_new_directory:
+                if os.path.exists(directory):
+                    self._observer.schedule(self._handler, directory, recursive=False)
+                    print(f"👁️ New directory added to watch: {directory}")
             
             print(f"🛡️ Protected: {os.path.basename(filepath)}")
             return True

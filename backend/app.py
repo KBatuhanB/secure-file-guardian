@@ -351,6 +351,7 @@ def upload_file():
     API ENDPOINT: Dosya Yükleme (Şifreli)
     
     Belirtilen dosyayı şifreleyip Firebase'e yükler.
+    Eğer izleme aktifse, dosya otomatik olarak korumaya alınır.
     
     GÜVENLİK:
         - Path traversal kontrolü yapılır
@@ -405,11 +406,26 @@ def upload_file():
         result = firebase_service.upload_file(sanitized_path)
         
         if result.get("success"):
+            # Eğer izleme aktifse, dosyayı otomatik olarak korumaya al
+            auto_protected = False
+            if file_watcher_service.is_running:
+                file_watcher_service.add_protected_file(sanitized_path, {
+                    "file_hash": result.get("hash"),
+                    "doc_id": result.get("doc_id")
+                })
+                auto_protected = True
+                _add_log("info", f"🛡️ Auto-protected: {result.get('filename')}")
+            
+            message = f"File uploaded successfully: {result.get('filename')}"
+            if auto_protected:
+                message += " (auto-protected)"
+            
             return jsonify({
                 "success": True,
-                "message": f"File uploaded successfully: {result.get('filename')}",
+                "message": message,
                 "doc_id": result.get("doc_id"),
-                "hash": result.get("hash")
+                "hash": result.get("hash"),
+                "auto_protected": auto_protected
             })
         else:
             return _create_error_response(
@@ -434,6 +450,7 @@ def delete_file(doc_id):
     API ENDPOINT: Dosya Silme
     
     Belirtilen döküman ID'sine sahip dosyayı Firebase'den siler.
+    Eğer izleme aktifse, dosya korumadan da çıkarılır.
     
     GÜVENLİK:
         - Döküman ID doğrulaması yapılır
@@ -452,7 +469,18 @@ def delete_file(doc_id):
         if not is_valid:
             return _create_error_response(error_msg, "INVALID_DOC_ID", 400)
         
+        # Önce dosya bilgisini al (original_path için)
+        file_info = firebase_service.get_file(doc_id)
+        original_path = file_info.get("original_path") if file_info else None
+        
+        # Firebase'den sil
         result = firebase_service.delete_file(doc_id)
+        
+        # Eğer izleme aktifse ve dosya yolu varsa, korumadan da çıkar
+        if result.get("success") and original_path and file_watcher_service.is_running:
+            file_watcher_service.remove_protected_file(original_path)
+            _add_log("info", f"🔓 Protection removed: {os.path.basename(original_path)}")
+        
         return jsonify(result)
         
     except Exception as e:
@@ -541,7 +569,8 @@ def start_monitoring():
                 400
             )
         
-        # Dosyaları file watcher'a ekle
+        # Dosyaları file watcher'a ekle (mevcut olanlara ek olarak)
+        added_count = 0
         for file_data in files:
             filepath = file_data.get("original_path") or file_data.get("filepath")
             if filepath and os.path.exists(filepath):
@@ -549,8 +578,18 @@ def start_monitoring():
                     "file_hash": file_data.get("file_hash"),
                     "doc_id": file_data.get("doc_id")
                 })
+                added_count += 1
         
-        # İzlemeyi başlat
+        # Eğer izleme zaten çalışıyorsa, sadece dosyaları eklemiş olduk
+        if file_watcher_service.is_running:
+            _add_log("info", f"🛡️ Added {added_count} files to existing monitoring")
+            return jsonify({
+                "success": True,
+                "message": f"Added {added_count} files to existing monitoring",
+                "protected_count": file_watcher_service.protected_file_count
+            })
+        
+        # İzleme çalışmıyorsa başlat
         success = file_watcher_service.start(
             on_violation=_on_violation,
             on_restore=_on_restore
