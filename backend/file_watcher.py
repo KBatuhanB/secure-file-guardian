@@ -77,7 +77,7 @@ class FileIntegrityHandler(FileSystemEventHandler):
                     sha256_hash.update(byte_block)
             return sha256_hash.hexdigest()
         except Exception as e:
-            self._log_event("error", f"Hash hesaplama hatası: {filepath} - {str(e)}")
+            self._log_event("error", f"Hash calculation error: {filepath} - {str(e)}")
             return None
     
     def _log_event(self, event_type: str, message: str, filepath: str = None):
@@ -128,7 +128,7 @@ class FileIntegrityHandler(FileSystemEventHandler):
         if self._is_in_cooldown(filepath):
             return
         
-        self._log_event("info", f"Dosya değişikliği algılandı: {os.path.basename(filepath)}", filepath)
+        self._log_event("info", f"File modification detected: {os.path.basename(filepath)}", filepath)
         
         # Hash karşılaştırması
         self._check_integrity(filepath)
@@ -146,7 +146,7 @@ class FileIntegrityHandler(FileSystemEventHandler):
         if self._is_in_cooldown(filepath):
             return
         
-        self._log_event("violation", f"🚨 Korunan dosya silindi: {os.path.basename(filepath)}", filepath)
+        self._log_event("violation", f"🚨 Protected file deleted: {os.path.basename(filepath)}", filepath)
         
         # Otomatik onarım
         self._auto_restore(filepath, reason="deleted")
@@ -159,19 +159,19 @@ class FileIntegrityHandler(FileSystemEventHandler):
         
         expected_hash = protected_info.get("file_hash")
         if not expected_hash:
-            self._log_event("warning", f"Beklenen hash bulunamadı: {os.path.basename(filepath)}", filepath)
+            self._log_event("warning", f"Expected hash not found: {os.path.basename(filepath)}", filepath)
             return
         
         current_hash = self._calculate_file_hash(filepath)
         
         if current_hash is None:
-            self._log_event("error", f"Mevcut hash hesaplanamadı: {os.path.basename(filepath)}", filepath)
+            self._log_event("error", f"Current hash could not be calculated: {os.path.basename(filepath)}", filepath)
             return
         
         if current_hash != expected_hash:
             self._log_event(
                 "violation", 
-                f"🚨 BÜTÜNLÜK İHLALİ: {os.path.basename(filepath)} - Hash uyuşmuyor!", 
+                f"🚨 INTEGRITY VIOLATION: {os.path.basename(filepath)} - Hash mismatch!", 
                 filepath
             )
             
@@ -182,56 +182,50 @@ class FileIntegrityHandler(FileSystemEventHandler):
             # Otomatik onarım
             self._auto_restore(filepath, reason="modified")
         else:
-            self._log_event("success", f"Bütünlük doğrulandı: {os.path.basename(filepath)}", filepath)
+            self._log_event("success", f"Integrity verified: {os.path.basename(filepath)}", filepath)
     
     def _auto_restore(self, filepath: str, reason: str = "unknown"):
         """Dosyayı otomatik olarak onarır (şifreli yedekten geri yükler)."""
         protected_info = self.protected_files.get(filepath)
         if not protected_info:
-            self._log_event("error", f"Onarım bilgisi bulunamadı: {filepath}", filepath)
-            return
-        
-        encrypted_data = protected_info.get("encrypted_data")
-        if not encrypted_data:
-            self._log_event("error", f"Şifreli yedek bulunamadı: {filepath}", filepath)
+            self._log_event("error", f"Restore information not found: {filepath}", filepath)
             return
         
         try:
-            self._log_event("restore", f"Otomatik onarım başlatılıyor: {os.path.basename(filepath)}", filepath)
+            self._log_event("restore", f"Starting automatic restore: {os.path.basename(filepath)}", filepath)
             
             # Şifreyi çöz ve dosyayı geri yükle
             from .crypto_service import crypto_service
+            from .firebase_service import firebase_service
             
-            # Encrypted data'dan dosyayı geri yükle
-            password = protected_info.get("_restore_password")  # Güvenli saklanan şifre
-            if password and encrypted_data:
-                # Binary veriyi decode et
-                import base64
-                encrypted_bytes = base64.b64decode(encrypted_data) if isinstance(encrypted_data, str) else encrypted_data
+            # Firebase'den şifreli veriyi al
+            doc_id = protected_info.get("doc_id")
+            if doc_id:
+                encrypted_data = firebase_service.get_encrypted_data(doc_id)
                 
-                # Şifreyi çöz
-                decrypted_data = crypto_service.decrypt_data(encrypted_bytes, password)
-                
-                if decrypted_data:
-                    # Dizin yoksa oluştur
-                    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+                if encrypted_data:
+                    # Şifreyi çöz
+                    decrypted_data = crypto_service.decrypt(encrypted_data)
                     
-                    # Dosyayı yaz
-                    with open(filepath, "wb") as f:
-                        f.write(decrypted_data)
-                    
-                    self._log_event("success", f"✅ Dosya başarıyla onarıldı: {os.path.basename(filepath)}", filepath)
-                    
-                    # Restore callback
-                    if self.on_restore:
-                        self.on_restore(filepath, reason)
-                else:
-                    self._log_event("error", f"Şifre çözme başarısız: {filepath}", filepath)
-            else:
-                self._log_event("warning", f"Otomatik onarım için şifre bulunamadı: {filepath}", filepath)
+                    if decrypted_data:
+                        # Dizin yoksa oluştur
+                        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+                        
+                        # Dosyayı yaz
+                        with open(filepath, "wb") as f:
+                            f.write(decrypted_data)
+                        
+                        self._log_event("success", f"✅ File restored successfully: {os.path.basename(filepath)}", filepath)
+                        
+                        # Restore callback
+                        if self.on_restore:
+                            self.on_restore(filepath, reason)
+                        return
+            
+            self._log_event("error", f"Encrypted backup not found: {filepath}", filepath)
                 
         except Exception as e:
-            self._log_event("error", f"Onarım hatası: {filepath} - {str(e)}", filepath)
+            self._log_event("error", f"Restore error: {filepath} - {str(e)}", filepath)
 
 
 class FileWatcherService:
@@ -284,7 +278,7 @@ class FileWatcherService:
             directory = os.path.dirname(abs_path)
             self._watched_directories.add(directory)
             
-            print(f"🛡️ Korumaya alındı: {os.path.basename(filepath)}")
+            print(f"🛡️ Protected: {os.path.basename(filepath)}")
             return True
     
     def remove_protected_file(self, filepath: str) -> bool:
@@ -293,7 +287,7 @@ class FileWatcherService:
             abs_path = os.path.abspath(filepath)
             if abs_path in self._protected_files:
                 del self._protected_files[abs_path]
-                print(f"🗑️ Korumadan çıkarıldı: {os.path.basename(filepath)}")
+                print(f"🗑️ Unprotected: {os.path.basename(filepath)}")
                 return True
             return False
     
@@ -304,7 +298,7 @@ class FileWatcherService:
                 {
                     "filepath": fp,
                     "filename": os.path.basename(fp),
-                    "file_hash": info.get("file_hash", "N/A")[:16] + "..."
+                    "file_hash": (info.get("file_hash") or "N/A")[:16] + "..." if info.get("file_hash") else "N/A"
                 }
                 for fp, info in self._protected_files.items()
             ]
@@ -322,11 +316,11 @@ class FileWatcherService:
         """
         with self._lock:
             if self._is_running:
-                print("⚠️ İzleme servisi zaten çalışıyor.")
+                print("⚠️ Monitoring service is already running.")
                 return False
             
             if not self._protected_files:
-                print("⚠️ Korunan dosya yok. İzleme başlatılamadı.")
+                print("⚠️ No protected files. Cannot start monitoring.")
                 return False
             
             try:
@@ -345,21 +339,21 @@ class FileWatcherService:
                 for directory in self._watched_directories:
                     if os.path.exists(directory):
                         self._observer.schedule(self._handler, directory, recursive=False)
-                        print(f"👁️ Dizin izleniyor: {directory}")
+                        print(f"👁️ Watching directory: {directory}")
                 
                 self._observer.start()
                 self._is_running = True
                 
                 print(f"\n{'='*50}")
-                print(f"🛡️ DOSYA KORUMA AKTİF")
-                print(f"📁 Korunan dosya sayısı: {len(self._protected_files)}")
-                print(f"📂 İzlenen dizin sayısı: {len(self._watched_directories)}")
+                print(f"🛡️ FILE PROTECTION ACTIVE")
+                print(f"📁 Protected files: {len(self._protected_files)}")
+                print(f"📂 Watched directories: {len(self._watched_directories)}")
                 print(f"{'='*50}\n")
                 
                 return True
                 
             except Exception as e:
-                print(f"❌ İzleme başlatma hatası: {str(e)}")
+                print(f"❌ Monitoring start error: {str(e)}")
                 self._is_running = False
                 return False
     
@@ -367,7 +361,7 @@ class FileWatcherService:
         """Dosya izleme servisini durdurur."""
         with self._lock:
             if not self._is_running:
-                print("⚠️ İzleme servisi zaten durmuş.")
+                print("⚠️ Monitoring service is already stopped.")
                 return False
             
             try:
@@ -379,13 +373,13 @@ class FileWatcherService:
                 self._is_running = False
                 
                 print(f"\n{'='*50}")
-                print(f"🛑 DOSYA KORUMA DURDURULDU")
+                print(f"🛑 FILE PROTECTION STOPPED")
                 print(f"{'='*50}\n")
                 
                 return True
                 
             except Exception as e:
-                print(f"❌ İzleme durdurma hatası: {str(e)}")
+                print(f"❌ Monitoring stop error: {str(e)}")
                 return False
     
     def get_status(self) -> dict:

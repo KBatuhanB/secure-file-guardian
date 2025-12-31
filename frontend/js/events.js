@@ -47,16 +47,16 @@ const EventHandlers = {
     // ==========================================================================
     
     /**
-     * Form submit olaylarını ayarlar
+     * Setup form submit events
      */
     _setupFormHandlers: function() {
-        // Dosya yükleme formu
+        // File upload form
         const uploadForm = document.getElementById('uploadForm');
         if (uploadForm) {
             uploadForm.addEventListener('submit', (e) => this._handleUploadSubmit(e));
         }
         
-        // Dosya ekleme formu (pending list)
+        // Add file form (pending list)
         const addFileForm = document.getElementById('addFileForm');
         if (addFileForm) {
             addFileForm.addEventListener('submit', (e) => this._handleAddFileSubmit(e));
@@ -64,7 +64,7 @@ const EventHandlers = {
     },
     
     /**
-     * Dosya yükleme form submit handler
+     * File upload form submit handler
      */
     _handleUploadSubmit: async function(event) {
         event.preventDefault();
@@ -73,7 +73,7 @@ const EventHandlers = {
         const filepath = filepathInput?.value?.trim();
         
         if (!filepath) {
-            UI.showToast('Lütfen dosya yolu girin!', 'warning');
+            UI.showToast('Please enter a file path!', 'warning');
             return;
         }
         
@@ -82,7 +82,7 @@ const EventHandlers = {
         const originalText = submitBtn?.textContent;
         if (submitBtn) {
             submitBtn.disabled = true;
-            submitBtn.textContent = '⏳ Yükleniyor...';
+            submitBtn.textContent = '⏳ Uploading...';
         }
         
         try {
@@ -92,13 +92,13 @@ const EventHandlers = {
                 UI.showToast(`✅ ${result.message}`, 'success');
                 filepathInput.value = '';
                 
-                // Dosya listesini güncelle
+                // Update file list
                 await this._refreshFileList();
             } else {
                 UI.showToast(`❌ ${result.error}`, 'error');
             }
         } catch (error) {
-            UI.showToast(`❌ Hata: ${error.message}`, 'error');
+            UI.showToast(`❌ Error: ${error.message}`, 'error');
         } finally {
             if (submitBtn) {
                 submitBtn.disabled = false;
@@ -108,7 +108,7 @@ const EventHandlers = {
     },
     
     /**
-     * Dosya ekleme (pending list) form submit handler
+     * Add file (pending list) form submit handler
      */
     _handleAddFileSubmit: function(event) {
         event.preventDefault();
@@ -117,20 +117,20 @@ const EventHandlers = {
         const filepath = input?.value?.trim();
         
         if (!filepath) {
-            UI.showToast('Lütfen dosya yolu girin!', 'warning');
+            UI.showToast('Please enter a file path!', 'warning');
             return;
         }
         
-        // State'e ekle
+        // Add to state
         AppState.addPendingFile(filepath);
         
-        // UI güncelle
+        // Update UI
         UI.updatePendingList();
         
-        // Input temizle
+        // Clear input
         input.value = '';
         
-        UI.showToast(`📁 Dosya listeye eklendi: ${filepath.split(/[\\/]/).pop()}`, 'info');
+        UI.showToast(`📁 File added to list: ${filepath.split(/[\\/]/).pop()}`, 'info');
     },
     
     // ==========================================================================
@@ -138,32 +138,32 @@ const EventHandlers = {
     // ==========================================================================
     
     /**
-     * Buton click olaylarını ayarlar
+     * Setup button click events
      */
     _setupButtonHandlers: function() {
-        // Korumayı Başlat butonu
+        // Start Protection button
         this._addClickHandler('startMonitoringBtn', () => this._handleStartMonitoring());
         
-        // Korumayı Durdur butonu
+        // Stop Protection button
         this._addClickHandler('stopMonitoringBtn', () => this._handleStopMonitoring());
         
-        // Dosyaları Yükle butonu
+        // Upload Files button
         this._addClickHandler('uploadAllBtn', () => this._handleUploadAll());
         
-        // Listeyi Temizle butonu
+        // Clear List button
         this._addClickHandler('clearPendingBtn', () => this._handleClearPending());
         
-        // Logları Temizle butonu
+        // Clear Logs button
         this._addClickHandler('clearLogsBtn', () => this._handleClearLogs());
         
-        // Yenile butonları
+        // Refresh buttons
         this._addClickHandler('refreshFilesBtn', () => this._refreshFileList());
-        this._addClickHandler('refreshLogsBtn', () => this._refreshLogs());
+        this._addClickHandler('refreshLogsBtn', () => this._refreshLogsManual());
         this._addClickHandler('refreshStatusBtn', () => this._refreshStatus());
     },
     
     /**
-     * Click handler ekleme yardımcı fonksiyonu
+     * Click handler helper function
      */
     _addClickHandler: function(elementId, handler) {
         const element = document.getElementById(elementId);
@@ -173,7 +173,7 @@ const EventHandlers = {
     },
     
     /**
-     * Korumayı başlat handler
+     * Start protection handler
      */
     _handleStartMonitoring: async function() {
         const btn = document.getElementById('startMonitoringBtn');
@@ -181,25 +181,27 @@ const EventHandlers = {
         
         try {
             const result = await ApiService.request(
-                CONFIG.API_BASE_URL + '/monitoring/start',
+                '/monitoring/start',
                 { method: 'POST' }
             );
             
             if (result.success) {
-                UI.showToast(`🛡️ Koruma başlatıldı! (${result.protected_count} dosya)`, 'success');
+                UI.showToast(`🛡️ Protection started! (${result.protected_count} files)`, 'success');
                 await this._refreshStatus();
+                await this._refreshLogs();
+                this._startLogPolling(); // Otomatik güncelleme başlat
             } else {
                 UI.showToast(`❌ ${result.error}`, 'error');
+                if (btn) btn.disabled = false; // Sadece hata durumunda butonu aç
             }
         } catch (error) {
-            UI.showToast(`❌ Hata: ${error.message}`, 'error');
-        } finally {
-            if (btn) btn.disabled = false;
+            UI.showToast(`❌ Error: ${error.message}`, 'error');
+            if (btn) btn.disabled = false; // Sadece hata durumunda butonu aç
         }
     },
     
     /**
-     * Korumayı durdur handler
+     * Stop protection handler
      */
     _handleStopMonitoring: async function() {
         const btn = document.getElementById('stopMonitoringBtn');
@@ -207,38 +209,40 @@ const EventHandlers = {
         
         try {
             const result = await ApiService.request(
-                CONFIG.API_BASE_URL + '/monitoring/stop',
+                '/monitoring/stop',
                 { method: 'POST' }
             );
             
             if (result.success) {
-                UI.showToast('🛑 Koruma durduruldu', 'info');
+                UI.showToast('🛑 Protection stopped', 'info');
                 await this._refreshStatus();
+                await this._refreshLogs();
+                this._stopLogPolling(); // Otomatik güncellemeyi durdur
             } else {
                 UI.showToast(`❌ ${result.error}`, 'error');
+                if (btn) btn.disabled = false; // Sadece hata durumunda butonu aç
             }
         } catch (error) {
-            UI.showToast(`❌ Hata: ${error.message}`, 'error');
-        } finally {
-            if (btn) btn.disabled = false;
+            UI.showToast(`❌ Error: ${error.message}`, 'error');
+            if (btn) btn.disabled = false; // Sadece hata durumunda butonu aç
         }
     },
     
     /**
-     * Tüm pending dosyaları yükle
+     * Upload all pending files
      */
     _handleUploadAll: async function() {
         const pendingFiles = AppState.pendingFiles;
         
         if (pendingFiles.length === 0) {
-            UI.showToast('Yüklenecek dosya yok!', 'warning');
+            UI.showToast('No files to upload!', 'warning');
             return;
         }
         
         const btn = document.getElementById('uploadAllBtn');
         if (btn) {
             btn.disabled = true;
-            btn.textContent = '⏳ Yükleniyor...';
+            btn.textContent = '⏳ Uploading...';
         }
         
         let successCount = 0;
@@ -262,50 +266,50 @@ const EventHandlers = {
         await this._refreshFileList();
         
         if (successCount > 0) {
-            UI.showToast(`✅ ${successCount} dosya yüklendi${errorCount > 0 ? `, ${errorCount} hata` : ''}`, 'success');
+            UI.showToast(`✅ ${successCount} files uploaded${errorCount > 0 ? `, ${errorCount} errors` : ''}`, 'success');
         } else {
-            UI.showToast(`❌ ${errorCount} dosya yüklenemedi`, 'error');
+            UI.showToast(`❌ ${errorCount} files failed to upload`, 'error');
         }
         
         if (btn) {
             btn.disabled = false;
-            btn.textContent = '📤 Tümünü Yükle';
+            btn.textContent = '📤 Upload All';
         }
     },
     
     /**
-     * Pending listesini temizle
+     * Clear pending list
      */
     _handleClearPending: function() {
         UI.showModal({
-            title: 'Listeyi Temizle',
-            message: 'Bekleyen tüm dosyalar listeden kaldırılacak. Emin misiniz?',
-            confirmText: 'Temizle',
-            cancelText: 'İptal',
+            title: 'Clear List',
+            message: 'All pending files will be removed from the list. Are you sure?',
+            confirmText: 'Clear',
+            cancelText: 'Cancel',
             onConfirm: () => {
                 AppState.clearPendingFiles();
                 UI.updatePendingList();
-                UI.showToast('🗑️ Liste temizlendi', 'info');
+                UI.showToast('🗑️ List cleared', 'info');
             }
         });
     },
     
     /**
-     * Logları temizle
+     * Clear logs
      */
     _handleClearLogs: async function() {
         try {
             const result = await ApiService.request(
-                CONFIG.API_BASE_URL + '/logs',
+                '/logs',
                 { method: 'DELETE' }
             );
             
             if (result.success) {
                 UI.updateLogs([]);
-                UI.showToast('🗑️ Loglar temizlendi', 'info');
+                UI.showToast('🗑️ Logs cleared', 'info');
             }
         } catch (error) {
-            UI.showToast(`❌ Hata: ${error.message}`, 'error');
+            UI.showToast(`❌ Error: ${error.message}`, 'error');
         }
     },
     
@@ -314,10 +318,10 @@ const EventHandlers = {
     // ==========================================================================
     
     /**
-     * Keyboard olaylarını ayarlar
+     * Setup keyboard events
      */
     _setupKeyboardHandlers: function() {
-        // Enter tuşu ile dosya ekleme
+        // Enter key to add file
         const pendingInput = document.getElementById('pendingFilePath');
         if (pendingInput) {
             pendingInput.addEventListener('keypress', (e) => {
@@ -328,7 +332,7 @@ const EventHandlers = {
             });
         }
         
-        // Enter tuşu ile dosya yükleme
+        // Enter key to upload file
         const filepathInput = document.getElementById('filepathInput');
         if (filepathInput) {
             filepathInput.addEventListener('keypress', (e) => {
@@ -339,7 +343,7 @@ const EventHandlers = {
             });
         }
         
-        // Escape ile modal kapatma
+        // Escape to close modal
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 UI.hideModal();
@@ -352,16 +356,16 @@ const EventHandlers = {
     // ==========================================================================
     
     /**
-     * Event delegation ile dinamik element handler'ları
+     * Event delegation for dynamic element handlers
      */
     _setupDelegatedHandlers: function() {
-        // Dosya listesi container'ı
+        // File list container
         const fileListContainer = document.getElementById('fileList');
         if (fileListContainer) {
             fileListContainer.addEventListener('click', (e) => this._handleFileListClick(e));
         }
         
-        // Pending dosya listesi container'ı
+        // Pending file list container
         const pendingListContainer = document.getElementById('pendingFileList');
         if (pendingListContainer) {
             pendingListContainer.addEventListener('click', (e) => this._handlePendingListClick(e));
@@ -369,22 +373,22 @@ const EventHandlers = {
     },
     
     /**
-     * Dosya listesindeki click olaylarını yönetir (Event Delegation)
+     * Handle click events in file list (Event Delegation)
      */
     _handleFileListClick: async function(event) {
         const target = event.target;
         
-        // Silme butonu
+        // Delete button
         if (target.classList.contains('delete-btn') || target.closest('.delete-btn')) {
             const btn = target.classList.contains('delete-btn') ? target : target.closest('.delete-btn');
             const docId = btn.dataset.docId;
             
             if (docId) {
                 UI.showModal({
-                    title: 'Dosyayı Sil',
-                    message: 'Bu dosya kalıcı olarak silinecek. Emin misiniz?',
-                    confirmText: 'Sil',
-                    cancelText: 'İptal',
+                    title: 'Delete File',
+                    message: 'This file will be permanently deleted. Are you sure?',
+                    confirmText: 'Delete',
+                    cancelText: 'Cancel',
                     type: 'danger',
                     onConfirm: async () => {
                         await this._deleteFile(docId);
@@ -393,24 +397,24 @@ const EventHandlers = {
             }
         }
         
-        // İndir butonu
+        // Download button
         if (target.classList.contains('download-btn') || target.closest('.download-btn')) {
             const btn = target.classList.contains('download-btn') ? target : target.closest('.download-btn');
             const docId = btn.dataset.docId;
             
             if (docId) {
-                UI.showToast('📥 İndirme özelliği yakında eklenecek...', 'info');
+                UI.showToast('📥 Download feature coming soon...', 'info');
             }
         }
     },
     
     /**
-     * Pending listesindeki click olaylarını yönetir (Event Delegation)
+     * Handle click events in pending list (Event Delegation)
      */
     _handlePendingListClick: function(event) {
         const target = event.target;
         
-        // Kaldır butonu
+        // Remove button
         if (target.classList.contains('remove-pending-btn') || target.closest('.remove-pending-btn')) {
             const btn = target.classList.contains('remove-pending-btn') ? target : target.closest('.remove-pending-btn');
             const filepath = btn.dataset.filepath;
@@ -418,7 +422,7 @@ const EventHandlers = {
             if (filepath) {
                 AppState.removePendingFile(filepath);
                 UI.updatePendingList();
-                UI.showToast('🗑️ Dosya listeden kaldırıldı', 'info');
+                UI.showToast('🗑️ File removed from list', 'info');
             }
         }
     },
@@ -428,25 +432,25 @@ const EventHandlers = {
     // ==========================================================================
     
     /**
-     * Dosya silme işlemi
+     * Delete file operation
      */
     _deleteFile: async function(docId) {
         try {
             const result = await ApiService.deleteFile(docId);
             
             if (result.success) {
-                UI.showToast('✅ Dosya silindi', 'success');
+                UI.showToast('✅ File deleted', 'success');
                 await this._refreshFileList();
             } else {
                 UI.showToast(`❌ ${result.error}`, 'error');
             }
         } catch (error) {
-            UI.showToast(`❌ Hata: ${error.message}`, 'error');
+            UI.showToast(`❌ Error: ${error.message}`, 'error');
         }
     },
     
     /**
-     * Dosya listesini yenile
+     * Refresh file list
      */
     _refreshFileList: async function() {
         try {
@@ -456,32 +460,32 @@ const EventHandlers = {
                 UI.updateFileList(result.files || []);
             }
         } catch (error) {
-            console.error('Dosya listesi yenileme hatası:', error);
+            console.error('File list refresh error:', error);
         }
     },
     
     /**
-     * Logları yenile
+     * Refresh logs (normal refresh - sadece yeni loglar)
      */
     _refreshLogs: async function() {
         try {
-            const result = await ApiService.request(CONFIG.API_BASE_URL + '/logs');
+            const result = await ApiService.request('/logs');
             if (result.success) {
-                UI.updateLogs(result.logs || []);
+                UI.updateLogs(result.logs || []); // Force refresh YOK - sadece yeni loglar eklenecek
             }
         } catch (error) {
-            console.error('Log yenileme hatası:', error);
+            console.error('Log refresh error:', error);
         }
     },
     
     /**
-     * Durumu yenile
+     * Refresh status
      */
     _refreshStatus: async function() {
         try {
             const [statusResult, monitoringResult] = await Promise.all([
                 ApiService.getStatus(),
-                ApiService.request(CONFIG.API_BASE_URL + '/monitoring/status')
+                ApiService.request('/monitoring/status')
             ]);
             
             if (statusResult.success) {
@@ -492,10 +496,39 @@ const EventHandlers = {
                 UI.updateMonitoringStatus(monitoringResult);
             }
         } catch (error) {
-            console.error('Durum yenileme hatası:', error);
+            console.error('Status refresh error:', error);
+        }
+    },
+    
+    // Log polling interval ID
+    _logPollingInterval: null,
+    
+    /**
+     * Monitoring aktifken log polling başlat (3 saniyede bir)
+     */
+    _startLogPolling: function() {
+        // Önce varsa durdur
+        this._stopLogPolling();
+        
+        // 3 saniyede bir kontrol et
+        this._logPollingInterval = setInterval(async () => {
+            await this._refreshLogs();
+        }, 3000);
+        
+        console.log('🔄 Log polling started (3s interval)');
+    },
+    
+    /**
+     * Log polling'i durdur
+     */
+    _stopLogPolling: function() {
+        if (this._logPollingInterval) {
+            clearInterval(this._logPollingInterval);
+            this._logPollingInterval = null;
+            console.log('⏹️ Log polling stopped');
         }
     }
 };
 
-// Modülü başlat
+// Initialize module
 EventHandlers.init();

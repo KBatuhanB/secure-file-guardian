@@ -1,34 +1,34 @@
 // ==============================================================================
-// UI GÜNCELLEME MODÜLÜ (ui.js)
+// UI UPDATE MODULE (ui.js)
 // ==============================================================================
-// Hafta 4 - DOM manipulation, Toast, Modal, List render fonksiyonları
-// UI/UX Developer (Üye 4) tarafından geliştirildi
+// DOM manipulation, Toast, Modal, List render functions
+// UI/UX Developer
 // ==============================================================================
 
 /**
- * UI - Kullanıcı Arayüzü Modülü
+ * UI - User Interface Module
  * 
- * Bu modül tüm DOM manipülasyonlarını yönetir:
- * - Dosya listesi güncelleme (updateFileList)
- * - Log görüntüleme (updateLogs)
- * - Toast bildirimleri (showToast)
- * - Modal diyalogları (showModal, hideModal)
+ * This module handles all DOM manipulations:
+ * - File list update (updateFileList)
+ * - Log display (updateLogs)
+ * - Toast notifications (showToast)
+ * - Modal dialogs (showModal, hideModal)
  */
 const UI = {
     
-    // Toast container referansı
+    // Toast container reference
     _toastContainer: null,
     
-    // Modal elementleri
+    // Modal elements
     _modalOverlay: null,
     _modalContent: null,
     _currentModalCallback: null,
     
     /**
-     * UI modülünü başlatır
+     * Initialize UI module
      */
     init: function() {
-        console.log('🎨 UI modülü başlatılıyor...');
+        console.log('🎨 UI module initializing...');
         
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => this._setup());
@@ -38,23 +38,23 @@ const UI = {
     },
     
     /**
-     * UI elementlerini oluşturur
+     * Create UI elements
      */
     _setup: function() {
         this._createToastContainer();
         this._createModal();
-        console.log('✅ UI modülü hazır');
+        console.log('✅ UI module ready');
     },
     
     // ==========================================================================
-    // TOAST BİLDİRİM SİSTEMİ
+    // TOAST NOTIFICATION SYSTEM
     // ==========================================================================
     
     /**
-     * Toast container'ı oluşturur
+     * Create toast container
      */
     _createToastContainer: function() {
-        // Mevcut container varsa kullan
+        // Use existing container if available
         let container = document.getElementById('toast-container');
         
         if (!container) {
@@ -97,12 +97,12 @@ const UI = {
         
         this._toastContainer.appendChild(toast);
         
-        // Animasyon için kısa gecikme
+        // Short delay for animation
         requestAnimationFrame(() => {
             toast.classList.add('toast-visible');
         });
         
-        // Otomatik kaldırma
+        // Auto remove
         setTimeout(() => {
             toast.classList.remove('toast-visible');
             toast.classList.add('toast-hiding');
@@ -116,14 +116,14 @@ const UI = {
     },
     
     // ==========================================================================
-    // MODAL DİYALOG SİSTEMİ
+    // MODAL DIALOG SYSTEM
     // ==========================================================================
     
     /**
-     * Modal elementlerini oluşturur
+     * Create modal elements
      */
     _createModal: function() {
-        // Mevcut modal varsa kullan
+        // Use existing modal if available
         let overlay = document.getElementById('modal-overlay');
         
         if (!overlay) {
@@ -133,22 +133,22 @@ const UI = {
             overlay.innerHTML = `
                 <div class="modal-content" id="modal-content">
                     <div class="modal-header">
-                        <h3 class="modal-title" id="modal-title">Modal Başlık</h3>
+                        <h3 class="modal-title" id="modal-title">Modal Title</h3>
                         <button class="modal-close" id="modal-close-btn">×</button>
                     </div>
                     <div class="modal-body" id="modal-body">
-                        <p id="modal-message">Modal içeriği</p>
+                        <p id="modal-message">Modal content</p>
                     </div>
                     <div class="modal-footer">
-                        <button class="modal-btn modal-btn-cancel" id="modal-cancel-btn">İptal</button>
-                        <button class="modal-btn modal-btn-confirm" id="modal-confirm-btn">Onayla</button>
+                        <button class="modal-btn modal-btn-cancel" id="modal-cancel-btn">Cancel</button>
+                        <button class="modal-btn modal-btn-confirm" id="modal-confirm-btn">Confirm</button>
                     </div>
                 </div>
             `;
             
             document.body.appendChild(overlay);
             
-            // Event listener'ları ekle
+            // Add event listeners
             overlay.addEventListener('click', (e) => {
                 if (e.target === overlay) {
                     this.hideModal();
@@ -164,15 +164,15 @@ const UI = {
     },
     
     /**
-     * Modal diyaloğunu gösterir
-     * @param {Object} options - Modal ayarları
+     * Show modal dialog
+     * @param {Object} options - Modal settings
      */
     showModal: function(options = {}) {
         const {
-            title = 'Onay',
-            message = 'Bu işlemi yapmak istediğinize emin misiniz?',
-            confirmText = 'Onayla',
-            cancelText = 'İptal',
+            title = 'Confirm',
+            message = 'Are you sure you want to perform this action?',
+            confirmText = 'Confirm',
+            cancelText = 'Cancel',
             type = 'default', // 'default' | 'danger' | 'warning'
             onConfirm = null
         } = options;
@@ -181,26 +181,26 @@ const UI = {
             this._createModal();
         }
         
-        // Modal içeriğini güncelle
+        // Update modal content
         document.getElementById('modal-title').textContent = title;
         document.getElementById('modal-message').textContent = message;
         document.getElementById('modal-confirm-btn').textContent = confirmText;
         document.getElementById('modal-cancel-btn').textContent = cancelText;
         
-        // Tip sınıfını ayarla
+        // Set type class
         const confirmBtn = document.getElementById('modal-confirm-btn');
         confirmBtn.className = `modal-btn modal-btn-confirm modal-btn-${type}`;
         
-        // Callback'i kaydet
+        // Save callback
         this._currentModalCallback = onConfirm;
         
-        // Modal'ı göster
+        // Show modal
         this._modalOverlay.classList.add('modal-visible');
         document.body.style.overflow = 'hidden';
     },
     
     /**
-     * Modal diyaloğunu gizler
+     * Hide modal dialog
      */
     hideModal: function() {
         if (this._modalOverlay) {
@@ -211,7 +211,7 @@ const UI = {
     },
     
     /**
-     * Modal onay butonunu işler
+     * Handle modal confirm button
      */
     _handleModalConfirm: function() {
         if (this._currentModalCallback) {
@@ -221,12 +221,12 @@ const UI = {
     },
     
     // ==========================================================================
-    // DOSYA LİSTESİ GÜNCELLEME
+    // FILE LIST UPDATE
     // ==========================================================================
     
     /**
-     * Korunan dosya listesini günceller
-     * @param {Array} files - Dosya dizisi
+     * Update protected file list
+     * @param {Array} files - File array
      */
     updateFileList: function(files = []) {
         const container = document.getElementById('fileList');
@@ -236,8 +236,8 @@ const UI = {
             container.innerHTML = `
                 <div class="empty-state">
                     <span class="empty-icon">📁</span>
-                    <p>Henüz korunan dosya yok</p>
-                    <small>Dosya eklemek için yukarıdaki formu kullanın</small>
+                    <p>No protected files yet</p>
+                    <small>Use the form above to add files</small>
                 </div>
             `;
             return;
@@ -247,7 +247,7 @@ const UI = {
         
         container.innerHTML = `
             <div class="file-list-header">
-                <span>🛡️ Korunan Dosyalar (${files.length})</span>
+                <span>🛡️ Protected Files (${files.length})</span>
             </div>
             <div class="file-list-items">
                 ${fileItems}
@@ -256,12 +256,13 @@ const UI = {
     },
     
     /**
-     * Tek dosya elementi oluşturur
+     * Create single file element
      */
     _createFileItem: function(file, index) {
-        const filename = file.original_path?.split(/[\\/]/).pop() || 'Bilinmeyen Dosya';
-        const uploadDate = file.upload_date ? this._formatDate(file.upload_date) : 'Bilinmiyor';
-        const fileSize = file.original_size ? this._formatFileSize(file.original_size) : '-';
+        const filename = file.filename || file.original_path?.split(/[\\/]/).pop() || 'Unknown File';
+        const fileSize = file.file_size ? this._formatFileSize(file.file_size) : '-';
+        const docId = file.doc_id || file.id || '';
+        const isProtected = file.status === 'active' || file.is_protected;
         
         return `
             <div class="file-item" data-index="${index}">
@@ -272,17 +273,13 @@ const UI = {
                     <div class="file-item-name" title="${this._escapeHtml(file.original_path || '')}">${this._escapeHtml(filename)}</div>
                     <div class="file-item-meta">
                         <span class="file-size">${fileSize}</span>
-                        <span class="file-date">${uploadDate}</span>
                     </div>
                 </div>
-                <div class="file-item-status ${file.is_protected ? 'protected' : 'unprotected'}">
-                    ${file.is_protected ? '🔒 Korunuyor' : '🔓 Korunmuyor'}
+                <div class="file-item-status ${isProtected ? 'protected' : 'unprotected'}">
+                    ${isProtected ? '🔒 Protected' : '🔓 Not Protected'}
                 </div>
                 <div class="file-item-actions">
-                    <button class="btn-icon download-btn" data-doc-id="${file.id}" title="İndir">
-                        📥
-                    </button>
-                    <button class="btn-icon delete-btn" data-doc-id="${file.id}" title="Sil">
+                    <button class="btn-icon delete-btn" data-doc-id="${docId}" title="Delete">
                         🗑️
                     </button>
                 </div>
@@ -291,7 +288,7 @@ const UI = {
     },
     
     /**
-     * Dosya uzantısına göre ikon döner
+     * Get icon based on file extension
      */
     _getFileIcon: function(filename) {
         const ext = filename.split('.').pop().toLowerCase();
@@ -324,11 +321,11 @@ const UI = {
     },
     
     // ==========================================================================
-    // PENDING (BEKLEYEN) LİSTE GÜNCELLEME
+    // PENDING LIST UPDATE
     // ==========================================================================
     
     /**
-     * Bekleyen dosya listesini günceller
+     * Update pending file list
      */
     updatePendingList: function() {
         const container = document.getElementById('pendingFileList');
@@ -339,7 +336,7 @@ const UI = {
         if (pendingFiles.length === 0) {
             container.innerHTML = `
                 <div class="empty-state small">
-                    <p>Bekleyen dosya yok</p>
+                    <p>No pending files</p>
                 </div>
             `;
             return;
@@ -351,7 +348,7 @@ const UI = {
                 <div class="pending-item">
                     <span class="pending-icon">📄</span>
                     <span class="pending-name" title="${this._escapeHtml(filepath)}">${this._escapeHtml(filename)}</span>
-                    <button class="btn-icon remove-pending-btn" data-filepath="${this._escapeHtml(filepath)}" title="Kaldır">
+                    <button class="btn-icon remove-pending-btn" data-filepath="${this._escapeHtml(filepath)}" title="Remove">
                         ×
                     </button>
                 </div>
@@ -360,45 +357,94 @@ const UI = {
         
         container.innerHTML = `
             <div class="pending-list-header">
-                Bekleyen Dosyalar (${pendingFiles.length})
+                Pending Files (${pendingFiles.length})
             </div>
             ${items}
         `;
     },
     
     // ==========================================================================
-    // LOG GÜNCELLEME
+    // LOG UPDATE
     // ==========================================================================
     
+    // Son görülen log'ların hash'lerini sakla
+    _logCache: new Map(),
+    
     /**
-     * Güvenlik loglarını günceller
-     * @param {Array} logs - Log dizisi
+     * Update security logs - gerçekten yeni log varsa ekle
+     * @param {Array} logs - Log array
+     * @param {boolean} forceRefresh - Zorla tam yenile
      */
-    updateLogs: function(logs = []) {
+    updateLogs: function(logs = [], forceRefresh = false) {
         const container = document.getElementById('logsContainer');
         if (!container) return;
         
+        // Boş liste durumu
         if (logs.length === 0) {
+            this._logCache.clear();
             container.innerHTML = `
                 <div class="empty-state">
                     <span class="empty-icon">📋</span>
-                    <p>Henüz güvenlik logu yok</p>
+                    <p>No security logs yet</p>
                 </div>
             `;
             return;
         }
         
-        const logItems = logs.map(log => this._createLogItem(log)).join('');
+        // Force refresh ise cache'i temizle ve tam yenile
+        if (forceRefresh) {
+            this._logCache.clear();
+            logs.forEach(log => {
+                const logKey = `${log.timestamp}_${log.type}_${log.message}`;
+                this._logCache.set(logKey, true);
+            });
+            
+            const logItems = logs.map(log => this._createLogItem(log)).join('');
+            container.innerHTML = `
+                <div class="logs-list">
+                    ${logItems}
+                </div>
+            `;
+            return;
+        }
         
-        container.innerHTML = `
-            <div class="logs-list">
-                ${logItems}
-            </div>
-        `;
+        // Sadece yeni logları bul
+        const newLogs = [];
+        for (const log of logs) {
+            const logKey = `${log.timestamp}_${log.type}_${log.message}`;
+            if (!this._logCache.has(logKey)) {
+                newLogs.push(log);
+                this._logCache.set(logKey, true);
+            }
+        }
+        
+        // Yeni log yoksa hiçbir şey yapma - DOM'a DOKUNMA
+        if (newLogs.length === 0) {
+            return;
+        }
+        
+        // Liste container'ı yoksa oluştur
+        let logsList = container.querySelector('.logs-list');
+        if (!logsList) {
+            logsList = document.createElement('div');
+            logsList.className = 'logs-list';
+            container.innerHTML = '';
+            container.appendChild(logsList);
+        }
+        
+        // Sadece yeni logları ekle (en üste)
+        const fragment = document.createDocumentFragment();
+        newLogs.reverse().forEach(log => {
+            const div = document.createElement('div');
+            div.innerHTML = this._createLogItem(log);
+            fragment.appendChild(div.firstElementChild);
+        });
+        
+        logsList.insertBefore(fragment, logsList.firstChild);
     },
     
     /**
-     * Tek log elementi oluşturur
+     * Create single log element
      */
     _createLogItem: function(log) {
         const typeClass = this._getLogTypeClass(log.type);
@@ -415,7 +461,7 @@ const UI = {
     },
     
     /**
-     * Log tipine göre CSS sınıfı döner
+     * Get CSS class based on log type
      */
     _getLogTypeClass: function(type) {
         const classMap = {
@@ -429,7 +475,7 @@ const UI = {
     },
     
     /**
-     * Log tipine göre ikon döner
+     * Get icon based on log type
      */
     _getLogTypeIcon: function(type) {
         const iconMap = {
@@ -443,31 +489,31 @@ const UI = {
     },
     
     // ==========================================================================
-    // MONITORING DURUM GÜNCELLEME
+    // MONITORING STATUS UPDATE
     // ==========================================================================
     
     /**
-     * Monitoring durumunu günceller
-     * @param {Object} status - Monitoring durumu
+     * Update monitoring status
+     * @param {Object} status - Monitoring status
      */
     updateMonitoringStatus: function(status = {}) {
         const statusContainer = document.getElementById('monitoringStatus');
         if (!statusContainer) return;
         
         const isRunning = status.is_running || false;
-        const protectedCount = status.protected_files_count || 0;
+        const protectedCount = status.protected_file_count || status.protected_files_count || 0;
         
         statusContainer.innerHTML = `
             <div class="status-indicator ${isRunning ? 'status-active' : 'status-inactive'}">
                 <span class="status-dot"></span>
-                <span class="status-text">${isRunning ? '🛡️ Aktif' : '⏸️ Pasif'}</span>
+                <span class="status-text">${isRunning ? '🛡️ Active' : '⏸️ Inactive'}</span>
             </div>
             <div class="status-info">
-                <span>Korunan: ${protectedCount} dosya</span>
+                <span>Protected: ${protectedCount} files</span>
             </div>
         `;
         
-        // Butonları güncelle
+        // Update buttons
         const startBtn = document.getElementById('startMonitoringBtn');
         const stopBtn = document.getElementById('stopMonitoringBtn');
         
@@ -476,11 +522,11 @@ const UI = {
     },
     
     // ==========================================================================
-    // YARDIMCI FONKSİYONLAR
+    // HELPER FUNCTIONS
     // ==========================================================================
     
     /**
-     * HTML karakterlerini escape eder
+     * Escape HTML characters
      */
     _escapeHtml: function(text) {
         const div = document.createElement('div');
@@ -489,12 +535,12 @@ const UI = {
     },
     
     /**
-     * Tarihi formatlar
+     * Format date
      */
     _formatDate: function(dateString) {
         try {
             const date = new Date(dateString);
-            return date.toLocaleDateString('tr-TR', {
+            return date.toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'short',
                 day: 'numeric'
@@ -505,12 +551,12 @@ const UI = {
     },
     
     /**
-     * Zamanı formatlar
+     * Format time
      */
     _formatTime: function(timestamp) {
         try {
             const date = new Date(timestamp);
-            return date.toLocaleTimeString('tr-TR', {
+            return date.toLocaleTimeString('en-US', {
                 hour: '2-digit',
                 minute: '2-digit',
                 second: '2-digit'
@@ -521,7 +567,7 @@ const UI = {
     },
     
     /**
-     * Dosya boyutunu formatlar
+     * Format file size
      */
     _formatFileSize: function(bytes) {
         if (bytes === 0) return '0 B';
@@ -534,5 +580,5 @@ const UI = {
     }
 };
 
-// Modülü başlat
+// Initialize module
 UI.init();

@@ -1,100 +1,219 @@
-# 🔒 FILE GUARDIAN - Hafta 4 Prototipi
+# 🔒 FILE GUARDIAN - Secure File Encryption & Protection System
 
-## 📋 Proje Durumu
+## 📋 Project Overview
 
-Bu klasör, projenin **4. hafta sonundaki** durumunu ve Hafta 4'te tamamlanan işleri içermektedir.
+**File Guardian** is a complete file encryption, protection, and monitoring system built with Python Flask backend and vanilla JavaScript frontend. The application provides secure file storage with AES-256 encryption, real-time file integrity monitoring, and automatic restoration from cloud backups.
 
-### ✅ Hafta 1-4 Özet (Kısa)
+### ✨ Key Features
 
-Hafta 1 ve 2'de altyapı kurulduktan sonra Hafta 3'te temel CRUD ve şifreleme özellikleri uygulandı. Hafta 4'te ise gerçek zamanlı izleme, frontend event handling ve UI bileşenleri eklendi.
-
-### 🔧 Hafta 4 - Tamamlanan Önemli Görevler
-
-**Backend (File Monitoring & Security):**
-- `backend/file_watcher.py` — Watchdog tabanlı real-time dosya izleme ve otomatik onarım logic'i (hash kontrol, cooldown, auto-restore)
-- `backend/app.py` — Yeni monitoring API endpoint'leri eklendi: `POST /api/monitoring/start`, `POST /api/monitoring/stop`, `GET /api/monitoring/status`, `GET/DELETE /api/logs`
-- Thread-safe security log mekanizması ve callback'lerle frontend bildirim entegrasyonu
-
-**Frontend (Event Handling & UI):**
-- `frontend/js/events.js` — Centralized `EventHandlers` modülü (form, button, delegated click, keyboard handlers, API integration)
-- `frontend/js/ui.js` — UI modülü (Toast, Modal, updateFileList, updateLogs, updateMonitoringStatus)
-- `frontend/index.html` ve `frontend/styles.css` güncellendi: monitoring kontrolleri, log paneli, animasyonlar, toast/modal stilleri
-
-**Diğer:**
-- `requirements.txt` güncellendi — eklenen paket: `watchdog`
-- Hafta 4 için bireysel raporlar (`Hafta4_Rapor_Uye1.md` .. `Hafta4_Rapor_Uye4.md`) Hafta 3 formatına uygun şekilde genişletildi ve detaylandırıldı
-
-### 📁 Güncel Proje Yapısı (Öne çıkanlar)
-
-```
-week1-2/
-├── backend/
-│   ├── __init__.py
-│   ├── app.py              # Flask sunucusu + monitoring & CRUD endpoints
-│   ├── config.py           # Yapılandırma
-│   ├── crypto_service.py   # Şifreleme servisi
-│   ├── firebase_service.py # Firebase Firestore entegrasyonu
-│   └── file_watcher.py     # Watchdog tabanlı dosya izleme ve auto-restore
-│
-├── frontend/
-│   ├── index.html          # Ana sayfa + Dosya yönetimi UI (monitoring kontrolleri eklendi)
-│   ├── styles.css          # UI stilleri, animasyonlar (toast, modal, status)
-│   └── js/
-│       ├── api.js          # API servis katmanı
-│       ├── events.js       # EventHandlers modülü (NEW)
-│       └── ui.js           # UI modülü (Toast, Modal, renderers) (NEW)
-│
-├── run.py                  # Başlatıcı
-├── requirements.txt        # Bağımlılıklar (watchdog eklendi)
-├── secret.key              # Fernet encryption key
-└── README.md               # Bu dosya
-```
-
-### 🚀 Çalıştırma (Hafta 4)
-
-Önkoşullar:
-- Python 3.8+ yüklü olmalı
-- `backend/serviceAccountKey.json` (Firebase) `backend/` içine yerleştirilmeli
-
-Terminal (PowerShell) örnek adımlar:
-
-```powershell
-# Bağımlılıkları yükle
-pip install -r requirements.txt
-
-# Sunucuyu başlat
-python run.py
-```
-
-Uygulama çalıştıktan sonra tarayıcıda: http://127.0.0.1:5000
-
-Notlar:
-- File watcher servisi `backend/file_watcher.py` bağımsız bir thread veya servis olarak çalıştırılabilir; `app.py` içerisinden başlatma/stop endpoint'leriyle kontrol ediliyor.
-
-### 🎯 Hafta 4'te Öne Çıkan Teknik Özellikler
-
-- Real-time dosya izleme: Watchdog kullanılarak `on_modified` / `on_deleted` event'leriyle dosya bütünlüğü kontrolü
-- SHA256 tabanlı hash karşılaştırması ile manipülasyon tespiti
-- Otomatik onarım: Firebase yedeklerinden restore mekanizması
-- Cooldown & debounce mekanizmaları ile duplicate event önleme
-- Frontend: Event delegation pattern, keyboard accessibility (Enter/Escape), toast/modal feedback
-- UI: Toast, Modal, Status Indicator, animasyonlar (pulse, slide-in/out)
-
-### 📝 Hafta 4 Sonu - Testler ve Raporlar
-
-- Frontend component ve integration testleri (event handler, API calls, UI rendering) — tüm temel senaryolar geçildi
-- Backend monitoring testleri: violation detection, auto-restore ve log kayıtları doğrulandı
-- Bireysel Hafta 4 raporları güncellendi: `Hafta4_Rapor_Uye1.md` .. `Hafta4_Rapor_Uye4.md` (ayrıntılı kod örnekleri ve test tabloları)
-
-### 📝 Sonraki Hafta Planı (Hafta 5)
-
-**Öncelikler:**
-- WebSocket ile real-time frontend bildirimleri (push notifications)
-- Authentication (JWT) ve endpoint güvenliği
-- Touch event desteği ve responsive UI iyileştirmeleri
-- Unit test coverage artırma (Jest / pytest)
-- Tema sistemi (Dark/Light) ve accessibility (ARIA) iyileştirmeleri
+- **AES-256 Encryption**: Industry-standard Fernet encryption for all stored files
+- **Firebase Cloud Storage**: Secure cloud backup with Firestore integration
+- **Real-time Monitoring**: Watchdog-based file integrity monitoring with automatic tamper detection
+- **Auto-Restoration**: Automatic file recovery from cloud backups when tampering is detected
+- **Security Logging**: Comprehensive logging of all security events and violations
+- **Modern Web UI**: Responsive interface with toast notifications, modals, and status indicators
+- **Rate Limiting**: Built-in protection against brute-force attacks
+- **Input Validation**: Path traversal and injection attack prevention
 
 ---
 
-**Hafta 4 Sonu - Aralık 2025**
+## 🚀 Installation & Setup
+
+### Prerequisites
+
+- **Python 3.8+** installed on your system
+- **Firebase Project** with Firestore enabled
+- **Firebase Service Account Key** (JSON file)
+
+### Step 1: Clone/Download the Project
+
+```powershell
+cd path/to/project/week
+```
+
+### Step 2: Create Virtual Environment (Recommended)
+
+```powershell
+# Create virtual environment
+python -m venv venv
+
+# Activate virtual environment (Windows PowerShell)
+.\venv\Scripts\Activate.ps1
+
+# Or for Command Prompt
+.\venv\Scripts\activate.bat
+```
+
+### Step 3: Install Dependencies
+
+```powershell
+pip install -r requirements.txt
+```
+
+**Required packages:**
+- `flask` - Web framework
+- `flask-cors` - Cross-Origin Resource Sharing
+- `cryptography` - AES encryption (Fernet)
+- `firebase-admin` - Firebase/Firestore integration
+- `watchdog` - File system monitoring
+
+### Step 4: Configure Firebase
+
+1. Go to [Firebase Console](https://console.firebase.google.com/)
+2. Create a new project or use existing one
+3. Navigate to **Project Settings** → **Service Accounts**
+4. Click **Generate New Private Key**
+5. Save the downloaded JSON file as `backend/serviceAccountKey.json`
+
+### Step 5: Run the Application
+
+```powershell
+python run.py
+```
+
+The server will start and display:
+```
+==================================================
+  FILE GUARDIAN - Secure File Protection System
+==================================================
+
+🚀 Server starting...
+✅ Firebase connected
+✅ Encryption service ready
+🌐 Running on http://127.0.0.1:5000
+```
+
+### Step 6: Access the Application
+
+Open your browser and navigate to: **http://127.0.0.1:5000**
+
+---
+
+## 📁 Project Structure
+
+```
+week/
+├── backend/
+│   ├── __init__.py           # Package initializer
+│   ├── app.py                # Flask server + API endpoints
+│   ├── config.py             # Configuration settings
+│   ├── crypto_service.py     # AES-256 encryption service
+│   ├── firebase_service.py   # Firebase Firestore integration
+│   ├── file_watcher.py       # Watchdog file monitoring service
+│   └── serviceAccountKey.json # Firebase credentials (not in repo)
+│
+├── frontend/
+│   ├── index.html            # Main application page
+│   ├── styles.css            # UI styles and animations
+│   └── js/
+│       ├── api.js            # API service layer
+│       ├── app.js            # Application initialization
+│       ├── config.js         # Frontend configuration
+│       ├── events.js         # Event handlers module
+│       ├── state.js          # Application state management
+│       └── ui.js             # UI components (Toast, Modal)
+│
+├── run.py                    # Application entry point
+├── requirements.txt          # Python dependencies
+├── secret.key                # Encryption key (auto-generated)
+└── README.md                 # This file
+```
+
+---
+
+## 🔌 API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/health` | Health check |
+| `GET` | `/api/status` | System status (Firebase, encryption) |
+| `GET` | `/api/files` | List all protected files |
+| `POST` | `/api/files/upload` | Upload and encrypt a file |
+| `DELETE` | `/api/files/<id>` | Delete a protected file |
+| `POST` | `/api/monitoring/start` | Start file monitoring |
+| `POST` | `/api/monitoring/stop` | Stop file monitoring |
+| `GET` | `/api/monitoring/status` | Get monitoring status |
+| `GET` | `/api/logs` | Get security logs |
+| `DELETE` | `/api/logs` | Clear security logs |
+
+---
+
+## 🛡️ Security Features
+
+### Encryption
+- **AES-256 (Fernet)**: All files are encrypted before storage
+- **Unique Keys**: Encryption key is auto-generated and stored locally
+- **Hash Verification**: SHA-256 hash for integrity checking
+
+### Protection
+- **Rate Limiting**: 100 requests per minute per IP
+- **Input Validation**: All paths sanitized against traversal attacks
+- **CORS Policy**: Controlled cross-origin access
+
+### Monitoring
+- **Real-time Detection**: Watchdog monitors file modifications
+- **Automatic Restore**: Tampered files restored from Firebase backup
+- **Event Logging**: All security events logged with timestamps
+
+---
+
+## 📖 Usage Guide
+
+### Adding Files for Protection
+
+1. Enter the full file path in the input field
+2. Click **Add** to add to pending list
+3. Click **Upload All** to encrypt and protect
+
+### Starting File Monitoring
+
+1. Click **Start Protection** in the monitoring panel
+2. Status will change to **Active** (green indicator)
+3. Any file tampering will be automatically detected and restored
+
+### Viewing Security Logs
+
+- All security events appear in the **Security Logs** panel
+- Events include: file additions, modifications, violations, restorations
+- Click **Refresh** to update logs manually
+
+---
+
+## 🧪 Testing
+
+```powershell
+# Run the server
+python run.py
+
+# Test API health
+curl http://127.0.0.1:5000/api/health
+
+# Test system status
+curl http://127.0.0.1:5000/api/status
+```
+
+---
+
+## 📝 Development Notes
+
+- The encryption key (`secret.key`) is auto-generated on first run
+- Firebase credentials must be placed in `backend/serviceAccountKey.json`
+- File monitoring uses a cooldown mechanism to prevent duplicate events
+- All API responses follow a consistent JSON structure
+
+---
+
+## 👥 Team
+
+- **Backend Developer**: Flask API, Firebase integration, Security features
+- **Encryption Specialist**: Cryptography service, Hash verification
+- **Frontend Developer**: Event handling, API integration
+- **UI/UX Developer**: Interface design, Toast/Modal components
+
+---
+
+## 📄 License
+
+This project was developed as part of the Scripting Languages course.
+
+**File Guardian © 2024-2025**

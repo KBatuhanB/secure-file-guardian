@@ -72,6 +72,14 @@ const AppState = {
             firebaseConnected: status.firebase?.connected || false,
             encryptionReady: status.encryption?.key_loaded || false
         };
+    },
+    
+    /**
+     * Sistem durumunu ayarlar (alias for updateSystemStatus)
+     * @param {Object} status - Durum bilgisi
+     */
+    setSystemStatus: function(status) {
+        this.updateSystemStatus(status);
     }
 };
 
