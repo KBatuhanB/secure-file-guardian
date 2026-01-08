@@ -1,0 +1,24 @@
+# ==============================================================================
+# GIT IGNORE DOSYASI
+# ==============================================================================
+# Hassas ve gereksiz dosyaları Git'ten hariç tutar
+# ==============================================================================
+
+# Hassas dosyalar
+secret.key
+
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

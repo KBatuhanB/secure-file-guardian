@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Guardian - Secure File Protection</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- ================================================================== -->
+    <!-- MAIN CONTAINER -->
+    <!-- File Guardian - File Monitoring and Automatic Restoration -->
+    <!-- ================================================================== -->
+    
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🔒 File Guardian</h1>
+            <p class="subtitle">File Encryption, Protection & Monitoring System</p>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Left Panel - File Operations -->
+            <section class="panel">
+                <h2>📁 File Operations</h2>
+                
+                <!-- Add File Form -->
+                <form id="addFileForm" class="input-group">
+                    <label for="pendingFilePath">File Path:</label>
+                    <input type="text" id="pendingFilePath" placeholder="C:\folder\file.txt">
+                    <button type="submit" class="btn btn-primary">➕ Add</button>
+                </form>
+                
+                <!-- Pending Files List -->
+                <div class="file-list" id="pendingList">
+                    <div id="pendingFileList">
+                        <div class="empty-state small">
+                            <p>No pending files</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="actions">
+                    <button class="btn btn-success" id="uploadAllBtn">📤 Upload All</button>
+                    <button class="btn btn-secondary" id="clearPendingBtn">🗑️ Clear List</button>
+                </div>
+                
+                <!-- Protected Files -->
+                <div class="protected-files">
+                    <div class="section-header">
+                        <h3>🛡️ Protected Files</h3>
+                        <button class="btn-icon" id="refreshFilesBtn" title="Refresh">🔄</button>
+                    </div>
+                    <div id="fileList">
+                        <div class="empty-state">
+                            <span class="empty-icon">📁</span>
+                            <p>No protected files yet</p>
+                            <small>Use the form above to add files</small>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Panel - Status and Monitoring -->
+            <section class="panel">
+                <h2>📊 System Status</h2>
+                
+                <!-- System Status -->
+                <div class="status-card">
+                    <div class="status-item">
+                        <span class="label">Server:</span>
+                        <span class="value" id="serverStatus">Checking...</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label">Firebase:</span>
+                        <span class="value" id="firebaseStatus">Checking...</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label">Encryption:</span>
+                        <span class="value" id="encryptionStatus">Checking...</span>
+                    </div>
+                </div>
+                
+                <!-- File Monitoring Control -->
+                <div class="monitoring-section">
+                    <div class="section-header">
+                        <h3>🔍 File Monitoring</h3>
+                        <button class="btn-icon" id="refreshStatusBtn" title="Refresh Status">🔄</button>
+                    </div>
+                    
+                    <div id="monitoringStatus" class="monitoring-status">
+                        <div class="status-indicator status-inactive">
+                            <span class="status-dot"></span>
+                            <span class="status-text">⏸️ Inactive</span>
+                        </div>
+                        <div class="status-info">
+                            <span>Protected: 0 files</span>
+                        </div>
+                    </div>
+                    
+                    <div class="monitoring-controls">
+                        <button class="btn btn-success" id="startMonitoringBtn">▶️ Start Protection</button>
+                        <button class="btn btn-danger" id="stopMonitoringBtn" disabled>⏹️ Stop Protection</button>
+                    </div>
+                </div>
+                
+                <!-- Security Logs -->
+                <div class="log-panel">
+                    <div class="section-header">
+                        <h3>📋 Security Logs</h3>
+                        <div class="header-actions">
+                            <button class="btn-icon" id="refreshLogsBtn" title="Refresh">🔄</button>
+                            <button class="btn-icon" id="clearLogsBtn" title="Clear">🗑️</button>
+                        </div>
+                    </div>
+                    <div class="log-content" id="logsContainer">
+                        <div class="empty-state">
+                            <span class="empty-icon">📋</span>
+                            <p>No security logs yet</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>File Guardian - Scripting Languages Course Project</p>
+            <small>Secure File Encryption & Monitoring System</small>
+        </footer>
+    </div>
+
+    <!-- JavaScript Modules -->
+    <script src="js/config.js"></script>
+    <script src="js/state.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/events.js"></script>
+    
+    <!-- Main Application Script -->
+    <script>
+        // =====================================================================
+        // APPLICATION INITIALIZER
+        // File Monitoring and Automatic Restoration Features
+        // =====================================================================
+        
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('🚀 File Guardian starting...');
+            
+            // Initial loads
+            await Promise.all([
+                checkStatus(),
+                loadProtectedFiles(),
+                loadMonitoringStatus(),
+                loadSecurityLogs()
+            ]);
+            
+            // Periodic updates - sadece status
+            setInterval(checkStatus, CONFIG.POLL_INTERVAL);
+            
+            console.log('✅ File Guardian ready!');
+        });
+        
+        // Load protected files
+        async function loadProtectedFiles() {
+            try {
+                const result = await ApiService.getFiles();
+                
+                if (result.success) {
+                    AppState.setProtectedFiles(result.files || []);
+                    UI.updateFileList(result.files || []);
+                }
+            } catch (error) {
+                console.error('File loading error:', error);
+            }
+        }
+        
+        // Load monitoring status
+        async function loadMonitoringStatus() {
+            try {
+                const result = await ApiService.request('/monitoring/status');
+                
+                if (result) {
+                    UI.updateMonitoringStatus(result);
+                }
+            } catch (error) {
+                console.error('Monitoring status error:', error);
+            }
+        }
+        
+        // Load security logs
+        async function loadSecurityLogs() {
+            try {
+                const result = await ApiService.request('/logs');
+                
+                if (result.success) {
+                    UI.updateLogs(result.logs || []);
+                }
+            } catch (error) {
+                console.error('Log loading error:', error);
+            }
+        }
+        
+        // Status check
+        async function checkStatus() {
+            try {
+                const data = await ApiService.getStatus();
+                AppState.updateSystemStatus(data);
+                
+                // Update UI
+                document.getElementById('serverStatus').textContent = '✅ Running';
+                document.getElementById('serverStatus').style.color = '#4ade80';
+                
+                if (AppState.systemStatus.firebaseConnected) {
+                    document.getElementById('firebaseStatus').textContent = '✅ Connected';
+                    document.getElementById('firebaseStatus').style.color = '#4ade80';
+                } else {
+                    document.getElementById('firebaseStatus').textContent = '⚠️ Not connected';
+                    document.getElementById('firebaseStatus').style.color = '#fbbf24';
+                }
+                
+                if (AppState.systemStatus.encryptionReady) {
+                    document.getElementById('encryptionStatus').textContent = '✅ Ready';
+                    document.getElementById('encryptionStatus').style.color = '#4ade80';
+                } else {
+                    document.getElementById('encryptionStatus').textContent = '❌ No key';
+                    document.getElementById('encryptionStatus').style.color = '#f87171';
+                }
+                
+            } catch (error) {
+                document.getElementById('serverStatus').textContent = '❌ Connection error';
+                document.getElementById('serverStatus').style.color = '#f87171';
+            }
+        }
+    </script>
+</body>
+</html>
